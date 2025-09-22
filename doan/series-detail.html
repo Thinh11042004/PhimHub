@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chi tiết · Phim bộ · PhimHUB</title>
+  <link rel="stylesheet" href="assets/css/series-detail.css" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container row">
+      <a class="logo" href="index.html" title="Về trang chủ">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img" />
+        <span>PhimHUB</span>
+      </a>
+      <nav class="nav">
+        <a href="#">Thể loại</a>
+        <a href="list.html">Trending</a>
+        <a href="list.html">Phim lẻ</a>
+        <a class="active" href="series.html">Phim bộ</a>
+      </nav>
+      <div class="search">
+        <span>🔍</span>
+        <input placeholder="Tìm kiếm phim, diễn viên…" />
+      </div>
+      <div id="auth-actions" class="auth">
+        <a class="btn" href="login.html">Đăng nhập</a>
+        <a class="btn primary" href="register.html">Đăng ký</a>
+      </div>
+      <a id="avatar-btn" class="avatar" href="profile.html" style="display:none">
+        <img src="assets/img/avatar.jpg" alt="me" />
+      </a>
+    </div>
+  </header>
+
+  <!-- BANNER LỚN -->
+  <section class="hero">
+    <div id="hero-bg" class="bg"></div>
+    <div class="fade"></div>
+  </section>
+
+  <!-- MAIN -->
+  <main class="container grid">
+    <!-- LEFT -->
+    <aside class="left">
+      <div class="poster"><img id="poster" src="assets/img/dienanhmoi2.jpg" alt=""></div>
+      <h3 id="title">Thế giới ảo diệu của Gumball</h3>
+      <div class="meta-line">
+        <span class="badge">P</span>
+        <span class="badge">20 Tập</span>
+        <span class="badge">2023</span>
+      </div>
+      <div class="tags" id="genres"></div>
+
+      <div class="box">
+        <div class="box-title">Giới thiệu</div>
+        <p id="desc">
+          Một series hoạt hình vui nhộn xoay quanh cậu bé Gumball và những người bạn
+          trong thế giới Elmore đầy màu sắc.
+        </p>
+      </div>
+
+      <div class="kv">
+        <div><span>Quốc gia:</span> <strong id="country">Mỹ</strong></div>
+        <div><span>Đạo diễn:</span> <strong id="director">Mic Graves</strong></div>
+        <div><span>Diễn viên:</span> <strong id="cast">Logan Grove, Kwesi Boakye</strong></div>
+        <div><span>Studio:</span> <strong>Cartoon Network Studios</strong></div>
+      </div>
+    </aside>
+
+    <!-- RIGHT -->
+    <section class="right">
+      <div class="top-actions">
+        <a class="btn play" id="btn-watch" href="watch.html">▶ Xem</a>
+        <span class="imdb" id="imdb">IMDb 8.7</span>
+        <div class="sp"></div>
+        <button class="btn icon" title="Đánh giá">⭐</button>
+        <button class="btn icon" id="btn-like" title="Yêu thích">♡</button>
+        <button class="btn icon" title="Thêm vào danh sách">➕</button>
+        <button class="btn icon" title="Chia sẻ">🔗</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="eps">Danh sách tập</button>
+        <button class="tab" data-tab="cmt">Bình luận</button>
+      </div>
+
+      <!-- EPISODES -->
+      <div id="panel-eps" class="panel">
+        <div class="row season-row">
+          <label>Phần</label>
+          <div class="dropdown">
+            <button id="season-btn" class="chip">Phần 1 ▾</button>
+            <div id="season-menu" class="menu"></div>
+          </div>
+        </div>
+
+        <div id="eps-grid" class="eps-grid"></div>
+
+        <h4 class="mt">Đề xuất</h4>
+        <div id="suggest-grid" class="suggest-grid"></div>
+      </div>
+
+      <!-- COMMENTS -->
+      <div id="panel-cmt" class="panel" style="display:none">
+        <div class="cmt-input">
+          <input id="cmt-text" placeholder="Viết bình luận…" />
+          <button id="cmt-send" class="btn primary">Gửi</button>
+        </div>
+        <div id="cmt-list" class="cmt-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="cols">
+      <a class="logo" href="index.html">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img small" />
+        <span>PhimHUB</span>
+      </a>
+      <div class="links">
+        <a href="#">Liên hệ</a>
+        <a href="#">Giới thiệu</a>
+        <a href="#">Điều khoản</a>
+        <a href="#">Hỏi đáp</a>
+      </div>
+    </div>
+    <p class="desc">PhimHUB — Nơi xem phim cho những người tài chính eo hẹp…</p>
+  </footer>
+
+  <script src="assets/js/series-detail.js"></script>
+</body>
+</html>

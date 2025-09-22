@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đăng nhập · PhimHUB</title>
+  <!-- Dùng lại CSS chung -->
+  <link rel="stylesheet" href="assets/css/home.css" />
+  <style>
+    /* Chỉ dành cho trang auth độc lập (không phải popup) */
+    body{ background: var(--bg); }
+    .auth-standalone {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.06), transparent 60%),
+        var(--bg);
+    }
+    /* Ẩn overlay/preset nếu có (trang này không dùng overlay) */
+    .overlay { display:none !important; }
+  </style>
+</head>
+<body>
+
+  <main class="auth-standalone">
+    <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <!-- nút đóng: về trang trước, nếu không có trang trước thì về index -->
+      <button class="auth-close" id="close-auth" aria-label="Đóng">✕</button>
+
+      <div class="auth-left">
+        <!-- Đổi ảnh theo ý bạn -->
+        <img src="assets/img/banner1.jpg" alt="login-banner" />
+        <div class="brand">
+          <img src="assets/img/logo.jpg" alt="logo" />
+          <div><strong>PhimHUB</strong><br /><small>Phim hay giá rổ</small></div>
+        </div>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-head">
+          <h3 id="login-title">Đăng nhập</h3>
+        </div>
+
+        <p class="muted">Chưa có tài khoản? <a href="register.html">Đăng ký ngay</a></p>
+
+        <input id="login-username" type="text" placeholder="Email hoặc tài khoản" />
+        <input id="login-password" type="password" placeholder="Mật khẩu" />
+
+        <!-- “Captcha” demo -->
+        <div class="captcha">✔ Thành công! <span>Fake Captcha</span></div>
+
+        <button id="btn-login" class="btn primary full">Đăng nhập</button>
+        <a href="#" class="muted small">Quên mật khẩu?</a>
+
+        <button class="btn google">Đăng nhập bằng Google</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Nút đóng: ưu tiên quay lại, nếu không có history thì về index
+    document.getElementById('close-auth').addEventListener('click', function () {
+      if (history.length > 1) history.back();
+      else window.location.href = 'index.html';
+    });
+
+    // Demo login: set localStorage để hiện avatar ở header khi quay lại index
+    document.getElementById('btn-login').addEventListener('click', function () {
+      // TODO: sau này gọi API thật
+      localStorage.setItem('demo-login', '1');
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
