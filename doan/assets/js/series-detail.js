@@ -52,9 +52,9 @@ const SUGGESTS = [
   qs('#director').textContent = SERIES.director;
   qs('#cast').textContent = SERIES.cast;
 
-  // suggest
+  // ✅ suggest: trỏ về series-detail.html
   qs('#suggest-grid').innerHTML = SUGGESTS.slice(0,4).map(m=>`
-    <a class="card" href="detail.html?id=${m.id}">
+    <a class="card" href="series-detail.html?id=${m.id}">
       <div class="poster"><img src="${m.poster}" alt="${m.title}"></div>
       <div class="info"><div class="title">${m.title}</div></div>
     </a>
@@ -72,6 +72,12 @@ document.addEventListener('click', (e)=>{
 
 // render episodes
 let currentSeason = SERIES.seasons[0].season;
+
+// ✅ hàm tạo URL xem phim bộ
+function makeWatchHref(seriesId, s, e){
+  return `series-watch.html?id=${encodeURIComponent(seriesId)}&s=${s}&e=${e}`;
+}
+
 function renderEpisodes(){
   seasonBtn.textContent = `Phần ${currentSeason} ▾`;
   const sObj = SERIES.seasons.find(s=>s.season===currentSeason);
@@ -79,16 +85,24 @@ function renderEpisodes(){
   const grid = qs('#eps-grid');
   let html='';
   for(let i=1;i<=total;i++){
-    const href = `watch.html?id=${SERIES.id}&s=${currentSeason}&e=${i}`;
+    const href = makeWatchHref(SERIES.id, currentSeason, i); // ✅ series-watch.html
     html += `<a class="ep" href="${href}" title="Tập ${i}">▶ Tập ${i}</a>`;
   }
   grid.innerHTML = html;
+
+  // set link cho nút ▶ Xem (mặc định tập 1 của season hiện tại)
+  const playBtn = qs('#btn-watch');
+  if (playBtn) playBtn.href = makeWatchHref(SERIES.id, currentSeason, 1);
 }
 renderEpisodes();
 
 // choose season
 qsa('#season-menu .item').forEach(it=>{
-  it.onclick = ()=>{ currentSeason = +it.dataset.s; renderEpisodes(); seasonMenu.style.display='none'; };
+  it.onclick = ()=>{
+    currentSeason = +it.dataset.s;
+    renderEpisodes();
+    seasonMenu.style.display='none';
+  };
 });
 
 // tabs
