@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hồ sơ · PhimHUB</title>
+
+  <!-- Dùng lại biến màu & base style của site -->
+  <link rel="stylesheet" href="assets/css/home.css" />
+
+  <!-- CSS riêng cho trang hồ sơ (nhẹ, đồng bộ style index) -->
+  <style>
+    .container{width:min(var(--container,1180px),92%);margin-inline:auto}
+
+    .profile-wrap{ padding:26px 0 40px }
+    .profile-grid{ display:grid; grid-template-columns: 1fr 260px; gap:20px }
+
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px }
+    .card .card-body{ padding:18px }
+
+    /* LEFT (content thay đổi) */
+    .profile-card h2{ margin:0 0 14px }
+    .form{ display:grid; gap:12px }
+    .form label{ font-size:14px; color:var(--muted) }
+    .input{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:#fff; color:#000 }
+    .btn-row{ display:flex; gap:10px; margin-top:6px }
+
+    .avatar-line{ display:flex; align-items:center; gap:12px; margin-bottom:14px }
+    .avatar-big{ width:72px; height:72px; border-radius:50%; overflow:hidden; border:2px solid rgba(255,255,255,.5); background:#1a2a46 }
+    .avatar-big img{ width:100%; height:100%; object-fit:cover }
+
+    /* Grid hiển thị phim (yêu thích) */
+    .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:16px }
+    .tile{ border:1px solid var(--border); border-radius:14px; overflow:hidden; background:rgba(255,255,255,.05) }
+    .tile .poster{ aspect-ratio:2/3; background:#0f1a30 }
+    .tile .meta{ padding:8px 10px }
+    .tile .title{ font-weight:700; font-size:14px }
+    .tile .rm{ position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:rgba(0,0,0,.45); color:#fff; border:0; cursor:pointer }
+    .tile.wrap{ position:relative }
+
+    /* RIGHT (sidebar đứng yên) */
+    .side{ position:sticky; top:90px; display:grid; gap:10px; height:max-content }
+    .sbtn{ text-align:left; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,.06); border:1px solid var(--border); cursor:pointer }
+    .sbtn.active{ background:rgba(255,255,255,.12) }
+    .logout{ display:flex; justify-content:flex-end; margin-top:6px }
+  </style>
+</head>
+<body>
+  <!-- HEADER đồng bộ index -->
+  <header class="header">
+    <div class="container row">
+      <a class="logo" href="index.html" title="Về trang chủ">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img" />
+        <span>PhimHUB</span>
+      </a>
+
+      <nav class="nav">
+        <a href="#">Thể loại</a>
+        <a href="list.html">Trending</a>
+        <a href="list.html">Phim lẻ</a>
+        <a href="series.html">Phim bộ</a>
+      </nav>
+
+      <div class="search">
+        <span>🔍</span>
+        <input placeholder="Tìm kiếm phim, diễn viên" />
+      </div>
+
+      <!-- Khi đã login chỉ hiện avatar -->
+      <div id="auth-actions" class="auth" style="display:none">
+        <a class="btn" href="login.html">Đăng nhập</a>
+        <a class="btn primary" href="register.html">Đăng ký</a>
+      </div>
+      <a id="avatar-btn" class="avatar" href="profile.html" title="Tài khoản">
+        <img id="avatar-small" src="assets/img/avatar.jpg" alt="me" />
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="profile-wrap container">
+    <div class="profile-grid">
+      <!-- LEFT: content thay đổi bằng JS -->
+      <section class="profile-card card">
+        <div class="card-body">
+          <!-- View: Tài khoản -->
+          <div id="view-account" class="view">
+            <h2>👤 Tài khoản</h2>
+
+            <div class="avatar-line">
+              <div class="avatar-big"><img id="avatar" src="assets/img/avatar.jpg" alt=""></div>
+              <div>
+                <input id="avatar-file" type="file" accept="image/*" hidden />
+                <button id="btn-change-avatar" class="btn">Đổi ảnh đại diện</button>
+              </div>
+            </div>
+
+            <div class="form">
+              <div>
+                <label>Email</label>
+                <input id="email" class="input" type="email" placeholder="email@domain.com"/>
+              </div>
+              <div>
+                <label>Tên người dùng</label>
+                <input id="name" class="input" placeholder="Tên của bạn"/>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button id="btn-save" class="btn primary">Cập nhật</button>
+              <button id="btn-change-pass" class="btn">Đổi mật khẩu</button>
+            </div>
+          </div>
+
+          <!-- View: YÊU THÍCH -->
+          <div id="view-fav" class="view" style="display:none">
+            <h2>❤️ Yêu thích</h2>
+            <div id="fav-grid" class="grid"></div>
+          </div>
+
+          <!-- View: DANH SÁCH (demo) -->
+          <div id="view-list" class="view" style="display:none">
+            <h2>🧾 Danh sách</h2>
+            <p>Chức năng quản lý danh sách phim sẽ được nối API sau.</p>
+          </div>
+
+          <!-- View: TRANG CHỦ -->
+          <div id="view-home" class="view" style="display:none">
+            <h2>🏠 Trang chủ</h2>
+            <p><a class="btn" href="index.html">Quay lại trang chủ</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Sidebar đứng yên -->
+      <aside class="side">
+        <button class="sbtn active" data-view="account">👤 Tài khoản</button>
+        <button class="sbtn" data-view="fav">❤️ Yêu thích</button>
+        <button class="sbtn" data-view="list">🧾 Danh sách</button>
+        <button class="sbtn" data-view="home">🏠 Trang chủ</button>
+
+        <div class="logout">
+          <button id="btn-logout" class="btn" style="background:#f2c4c4;color:#352;">Đăng xuất</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- FOOTER đồng bộ index -->
+  <footer class="footer">
+    <div class="cols">
+      <a class="logo" href="index.html">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img small" />
+        <span>PhimHUB</span>
+      </a>
+      <div class="links">
+        <a href="#">Liên hệ</a>
+        <a href="#">Giới thiệu</a>
+        <a href="#">Điều khoản</a>
+        <a href="#">Hỏi đáp</a>
+      </div>
+    </div>
+    <p class="desc">
+      PhimHUB - Nơi xem phim cho những người tài chính eo hẹp, tận hưởng thời gian với
+      các bộ phim chất lượng như những người không có tài chính eo hẹp.
+    </p>
+  </footer>
+
+  <script src="assets/js/profile.js"></script>
+</body>
+</html>

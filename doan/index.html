@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PhimHUB · Trang chủ</title>
+    <link rel="stylesheet" href="assets/css/home.css" />
+  </head>
+  <body>
+    <!-- HEADER -->
+    <header class="header">
+      <div class="container row">
+        <a class="logo" href="index.html" title="Về trang chủ">
+          <img src="assets/img/logo.jpg" alt="logo" class="logo-img" />
+          <span>PhimHUB</span>
+        </a>
+
+        <nav class="nav">
+          <a href="#">Thể loại</a>
+          <a href="list.html">Trending</a>
+          <a href="list.html">Phim lẻ</a>
+          <!-- ✅ Sửa link Phim bộ sang series.html -->
+          <a href="series.html">Phim bộ</a>
+        </nav>
+
+        <div class="search">
+          <span>🔍</span>
+          <input id="search-input" placeholder="Tìm kiếm phim, diễn viên" />
+        </div>
+
+        <!-- Hai nút khi CHƯA đăng nhập -->
+        <div id="auth-actions" class="auth">
+          <a class="btn" href="login.html">Đăng nhập</a>
+          <a class="btn primary" href="register.html">Đăng ký</a>
+        </div>
+        <!-- Avatar khi ĐÃ đăng nhập (JS sẽ ẩn/hiện) -->
+        <a id="avatar-btn" class="avatar" href="profile.html" title="Tài khoản" style="display:none">
+          <img src="assets/img/avatar.jpg" alt="me" />
+        </a>
+      </div>
+    </header>
+
+    <!-- HERO / BANNER LỚN -->
+    <section class="hero" id="hero">
+      <div class="bg" id="hero-bg"></div>
+      <div class="fade"></div>
+
+      <div class="content">
+        <div class="inner">
+          <div>
+            <h1 id="hero-title">—</h1>
+            <div class="badges" id="hero-badges"></div>
+            <p id="hero-desc"></p>
+
+            <div class="ctas">
+              <a class="play" href="watch.html" title="Xem">▶</a>
+              <button class="btn icon-btn" id="btn-like">🤍 <span>Yêu thích</span></button>
+              <a class="btn icon-btn" href="#sec-de-xuat" title="Mở rộng">☰ <span>Xem đề xuất</span></a>
+            </div>
+          </div>
+
+          <!-- thumbnails -->
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTIONS (căn giữa, 5 card/row, lật trang bằng nút) -->
+    <main class="sections">
+      <!-- Phim đã xem -->
+      <section class="section" id="sec-da-xem">
+        <div class="row-center">
+          <div class="carousel">
+            <div class="head">
+              <h2 class="h2">Phim đã xem</h2>
+            </div>
+            <button class="ctrl left" data-target="track-watched">‹</button>
+            <div class="track" id="track-watched"></div>
+            <button class="ctrl right" data-target="track-watched">›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Điện ảnh mới -->
+      <section class="section" id="sec-dien-anh">
+        <div class="row-center">
+          <div class="carousel">
+            <div class="head">
+              <h2 class="h2">Điện ảnh mới</h2>
+            </div>
+            <button class="ctrl left" data-target="track-movies">‹</button>
+            <div class="track" id="track-movies"></div>
+            <button class="ctrl right" data-target="track-movies">›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TV Show mới -->
+      <section class="section" id="sec-tv">
+        <div class="row-center">
+          <div class="carousel">
+            <div class="head">
+              <h2 class="h2">TV Show mới</h2>
+            </div>
+            <button class="ctrl left" data-target="track-tv">‹</button>
+            <div class="track" id="track-tv"></div>
+            <button class="ctrl right" data-target="track-tv">›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Top thịnh hành -->
+      <section class="section" id="sec-de-xuat">
+        <div class="row-center">
+          <div class="carousel">
+            <div class="head">
+              <h2 class="h2">TOP Thịnh hành</h2>
+            </div>
+            <button class="ctrl left" data-target="track-top">‹</button>
+            <div class="track" id="track-top"></div>
+            <button class="ctrl right" data-target="track-top">›</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="cols">
+        <a class="logo" href="index.html">
+          <img src="assets/img/logo.jpg" alt="logo" class="logo-img small" />
+          <span>PhimHUB</span>
+        </a>
+        <div class="links">
+          <a href="#">Liên hệ</a>
+          <a href="#">Giới thiệu</a>
+          <a href="#">Điều khoản</a>
+          <a href="#">Hỏi đáp</a>
+        </div>
+      </div>
+      <p class="desc">
+        PhimHUB - Nơi xem phim cho những người tài chính eo hẹp, tận hưởng thời gian với
+        các bộ phim chất lượng như những người không có tài chính eo hẹp.
+      </p>
+    </footer>
+
+    <!-- ===== AUTH MODALS (popup) để home.js điều khiển ===== -->
+    <div id="auth-overlay" class="overlay" style="display:none">
+      <!-- LOGIN -->
+      <div id="login-modal" class="auth-card" style="display:none">
+        <button class="auth-close" aria-label="Đóng">×</button>
+        <div class="auth-left">
+          <img src="assets/img/banner1.jpg" alt="Login banner" />
+          <div class="brand">
+            <img src="assets/img/logo.jpg" alt="logo" />
+            <span>PhimHUB</span>
+          </div>
+        </div>
+        <div class="auth-right">
+          <h3>Đăng nhập</h3>
+          <span class="muted small">Nếu bạn chưa có tài khoản, <a href="#" id="to-register">đăng ký ngay</a></span>
+          <input type="email" placeholder="Email hoặc tài khoản" />
+          <input type="password" placeholder="Mật khẩu" />
+          <div class="captcha">✔ Thành công! Fake Captcha</div>
+          <button class="btn primary full">Đăng nhập</button>
+          <span class="muted small">Quên mật khẩu?</span>
+          <button class="btn google full">Đăng nhập bằng Google</button>
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="register-modal" class="auth-card" style="display:none">
+        <button class="auth-close" aria-label="Đóng">×</button>
+        <div class="auth-left">
+          <img src="assets/img/banner2.jpg" alt="Register banner" />
+          <div class="brand">
+            <img src="assets/img/logo.jpg" alt="logo" />
+            <span>PhimHUB</span>
+          </div>
+        </div>
+        <div class="auth-right">
+          <h3>Đăng ký</h3>
+          <span class="muted small">Đã có tài khoản? <a href="#" id="to-login">Đăng nhập</a></span>
+          <input type="text" placeholder="Tên người dùng" />
+          <input type="email" placeholder="Email" />
+          <input type="password" placeholder="Mật khẩu" />
+          <input type="password" placeholder="Nhập lại mật khẩu" />
+          <button class="btn primary full">Đăng ký</button>
+          <button class="btn google full">Đăng ký bằng Google</button>
+        </div>
+      </div>
+    </div>
+    <!-- ===== /AUTH MODALS ===== -->
+
+    <script src="assets/js/home.js"></script>
+  </body>
+</html>

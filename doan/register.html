@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đăng ký · PhimHUB</title>
+  <!-- Dùng lại CSS chung -->
+  <link rel="stylesheet" href="assets/css/home.css" />
+  <style>
+    body{ background: var(--bg); }
+    .auth-standalone {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.06), transparent 60%),
+        var(--bg);
+    }
+    .overlay { display:none !important; }
+  </style>
+</head>
+<body>
+
+  <main class="auth-standalone">
+    <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="register-title">
+      <button class="auth-close" id="close-auth" aria-label="Đóng">✕</button>
+
+      <div class="auth-left">
+        <img src="assets/img/banner2.jpg" alt="register-banner" />
+        <div class="brand">
+          <img src="assets/img/logo.jpg" alt="logo" />
+          <div><strong>PhimHUB</strong><br /><small>Phim hay giá rổ</small></div>
+        </div>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-head">
+          <h3 id="register-title">Đăng ký</h3>
+        </div>
+
+        <p class="muted">Đã có tài khoản? <a href="login.html">Đăng nhập</a></p>
+
+        <input id="reg-name" type="text" placeholder="Tên người dùng" />
+        <input id="reg-username" type="text" placeholder="Email hoặc tài khoản" />
+        <input id="reg-password" type="password" placeholder="Mật khẩu" />
+        <input id="reg-repassword" type="password" placeholder="Nhập lại mật khẩu" />
+
+        <button id="btn-register" class="btn primary full">Đăng ký</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('close-auth').addEventListener('click', function () {
+      if (history.length > 1) history.back();
+      else window.location.href = 'index.html';
+    });
+
+    // Demo register: sau khi "đăng ký" xong điều hướng sang login
+    document.getElementById('btn-register').addEventListener('click', function () {
+      // TODO: gọi API tạo tài khoản
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>

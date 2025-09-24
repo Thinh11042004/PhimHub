@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Yêu thích · PhimHUB</title>
+  <link rel="stylesheet" href="assets/css/home.css" />
+  <link rel="stylesheet" href="assets/css/favorites.css" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container row">
+      <a class="logo" href="index.html" title="Về trang chủ">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img" />
+        <span>PhimHUB</span>
+      </a>
+
+      <nav class="nav">
+        <a href="#">Thể loại</a>
+        <a href="list.html">Trending</a>
+        <a href="list.html">Phim lẻ</a>
+        <a href="series.html">Phim bộ</a>
+      </nav>
+
+      <div class="search">
+        <span>🔍</span>
+        <input placeholder="Tìm trong yêu thích…" id="fav-search"/>
+      </div>
+
+      <!-- khi đã login: ẩn 2 nút này, hiện avatar -->
+      <div id="auth-actions" class="auth" style="display:none">
+        <a class="btn js-open-login" href="#">Đăng nhập</a>
+        <a class="btn primary js-open-register" href="#">Đăng ký</a>
+      </div>
+      <a id="avatar-btn" class="avatar" href="profile.html" title="Tài khoản">
+        <img src="assets/img/avatar.jpg" alt="me" />
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="container fav-wrap">
+    <aside class="fav-side">
+      <button class="sbtn">👤 Tài khoản</button>
+      <button class="sbtn active">❤️ Yêu thích</button>
+      <button class="sbtn" onclick="location.href='profile.html'">🧾 Danh sách</button>
+      <button class="sbtn" onclick="location.href='profile.html'">📺 Đã xem</button>
+
+      <div class="logout">
+        <button id="btn-logout" class="btn" style="background:#f2c4c4;color:#352;">Đăng xuất</button>
+      </div>
+    </aside>
+
+    <section class="fav-main">
+      <h1 class="fav-title">❤️ Yêu thích</h1>
+      <div id="fav-grid" class="fav-grid"></div>
+      <div id="fav-empty" class="fav-empty" style="display:none">
+        Danh sách yêu thích trống. Hãy thêm vài bộ phim nhé!
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="cols">
+      <a class="logo" href="index.html">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img small" />
+        <span>PhimHUB</span>
+      </a>
+      <div class="links">
+        <a href="#">Liên hệ</a>
+        <a href="#">Giới thiệu</a>
+        <a href="#">Điều khoản</a>
+        <a href="#">Hỏi đáp</a>
+      </div>
+    </div>
+    <p class="desc">
+      PhimHUB — Nơi xem phim cho những người tài chính eo hẹp, tận hưởng thời gian
+      với các bộ phim chất lượng như những người không có tài chính eo hẹp.
+    </p>
+  </footer>
+
+  <script src="assets/js/favorites.js"></script>
+</body>
+</html>
