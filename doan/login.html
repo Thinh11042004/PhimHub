@@ -7,11 +7,12 @@
   <link rel="stylesheet" href="assets/css/home.css" />
   <style>
     body{ background: var(--bg); }
-    .auth-standalone {
-      min-height: 100dvh; display: grid; place-items: center; padding: 24px;
+    .auth-standalone{
+      min-height: 100dvh; display:grid; place-items:center; padding:24px;
       background: radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.06), transparent 60%), var(--bg);
     }
-    .overlay { display:none !important; }
+    .overlay{display:none!important}
+    .err{ display:none; color:#ffb3b3; font-size:14px; margin:-6px 0 6px }
   </style>
 </head>
 <body>
@@ -34,16 +35,16 @@
 
         <p class="muted">Chưa có tài khoản? <a href="register.html">Đăng ký ngay</a></p>
 
-        <input id="login-username" type="text" placeholder="Email hoặc tài khoản" autocomplete="username" />
-        <input id="login-password" type="password" placeholder="Mật khẩu" autocomplete="current-password" />
+        <div id="login-error" class="err"></div>
+        <input id="login-username" type="text" placeholder="Email hoặc tài khoản" />
+        <input id="login-password" type="password" placeholder="Mật khẩu" />
 
-        <div id="login-error" class="muted small" style="color:#ffb4b4; display:none;">Sai thông tin đăng nhập.</div>
         <div class="captcha">✔ Thành công! <span>Fake Captcha</span></div>
 
         <button id="btn-login" class="btn primary full">Đăng nhập</button>
         <a href="#" class="muted small">Quên mật khẩu?</a>
 
-        <button class="btn google" type="button">Đăng nhập bằng Google</button>
+        <button class="btn google">Đăng nhập bằng Google</button>
       </div>
     </div>
   </main>
