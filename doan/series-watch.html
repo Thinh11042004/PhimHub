@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Xem phim bộ · PhimHUB</title>
+  <link rel="stylesheet" href="assets/css/watch-series.css" />
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container row">
+      <a class="logo" href="index.html" title="Trang chủ">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img" />
+        <span>PhimHUB</span>
+      </a>
+      <nav class="nav">
+        <a href="#">Thể loại</a>
+        <a href="list.html">Trending</a>
+        <a href="list.html">Phim lẻ</a>
+        <a class="active" href="series.html">Phim bộ</a>
+      </nav>
+      <div class="search">
+        <span>🔍</span>
+        <input id="search" placeholder="Tìm phim…" />
+      </div>
+      <div id="auth-actions" class="auth">
+        <a class="btn" href="login.html">Đăng nhập</a>
+        <a class="btn primary" href="register.html">Đăng ký</a>
+      </div>
+      <a id="avatar-btn" class="avatar" href="profile.html" style="display:none">
+        <img src="assets/img/avatar.jpg" alt="me"/>
+      </a>
+    </div>
+  </header>
+
+  <!-- PLAYER -->
+  <main class="container">
+    <div class="player-wrap">
+      <video id="player" controls poster="assets/img/phimbomoi1.jpg">
+        <source src="assets/video/demo.mp4" type="video/mp4">
+        Trình duyệt không hỗ trợ video.
+      </video>
+    </div>
+
+    <!-- SERVER & QUALITY -->
+    <div class="options">
+      <div class="group">
+        <span>Server:</span>
+        <button class="chip active">Server 1</button>
+        <button class="chip">Server 2</button>
+      </div>
+      <div class="group">
+        <span>Chất lượng:</span>
+        <button class="chip active">1080p</button>
+        <button class="chip">720p</button>
+        <button class="chip">480p</button>
+      </div>
+      <div class="group">
+        <span>Ngôn ngữ:</span>
+        <button class="chip active">Phụ đề</button>
+        <button class="chip">Thuyết minh</button>
+      </div>
+    </div>
+
+    <!-- EPISODES -->
+    <section class="episodes">
+      <h2>Danh sách tập</h2>
+      <div class="chips" id="ep-list"></div>
+    </section>
+
+    <!-- RECOMMEND -->
+    <section class="recommend">
+      <h2>Đề xuất</h2>
+      <div class="cards" id="recommend"></div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="cols">
+      <a class="logo" href="index.html">
+        <img src="assets/img/logo.jpg" class="logo-img small" />
+        <span>PhimHUB</span>
+      </a>
+      <div class="links">
+        <a href="#">Liên hệ</a>
+        <a href="#">Giới thiệu</a>
+        <a href="#">Điều khoản</a>
+        <a href="#">Hỏi đáp</a>
+      </div>
+    </div>
+    <p class="desc">
+      PhimHUB — Nơi xem phim cho những người tài chính eo hẹp, tận hưởng thời gian với
+      các bộ phim chất lượng như những người không có tài chính eo hẹp.
+    </p>
+  </footer>
+
+  <script src="assets/js/watch-series.js"></script>
+</body>
+</html>
