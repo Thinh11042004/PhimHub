@@ -1,0 +1,73 @@
+/* Dùng biến từ home.css */
+.fav-wrap{
+    display:grid;
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+    padding: 22px 0 40px;
+  }
+  
+  .fav-side{
+    position: sticky; 
+    top: 86px;
+    align-self: start;
+    display: grid;
+    gap: 10px;
+    height: max-content;
+  }
+  
+  .sbtn{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 14px; border-radius:12px;
+    background:rgba(255,255,255,.06); border:1px solid var(--border);
+    cursor:pointer;
+  }
+  .sbtn.active{ outline:2px solid rgba(255,255,255,.18); }
+  
+  .logout{ margin-top:6px; display:flex; justify-content:flex-end; }
+  
+  .fav-main{ min-height: 60vh; }
+  .fav-title{ margin: 4px 0 14px; }
+  
+  .fav-grid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 18px;
+  }
+  @media (max-width: 900px){ .fav-wrap{ grid-template-columns: 1fr; } .fav-grid{ grid-template-columns: repeat(2,1fr);} }
+  @media (max-width: 560px){ .fav-grid{ grid-template-columns: 1fr; } }
+  
+  .fav-card{
+    position:relative;
+    background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    border:1px solid var(--border);
+    border-radius:16px; overflow:hidden;
+  }
+  .fav-card .thumb{ aspect-ratio: 3/4; background:#0f1a30; }
+  .fav-card .thumb img{ width:100%; height:100%; object-fit:cover; }
+  
+  .fav-card .cap{
+    padding:10px 12px;
+  }
+  .fav-card .name{ font-weight:700; margin-bottom:4px; }
+  .fav-card .meta{ font-size:12px; color:var(--muted); }
+  
+  .fav-card .remove{
+    position:absolute; top:10px; right:10px;
+    width:30px;height:30px;border-radius:50%;
+    display:grid;place-items:center;
+    background: rgba(0,0,0,.35);
+    color:#fff;border:1px solid var(--border);
+    cursor:pointer;
+  }
+  .fav-card .remove:hover{ background: rgba(0,0,0,.55); }
+  
+  .fav-empty{
+    margin: 28px 0;
+    padding: 18px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    text-align: center;
+    color: var(--muted);
+  }
+  
