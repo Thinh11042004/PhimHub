@@ -78,61 +78,24 @@ img{display:block;max-width:100%}
 .footer .links{display:flex;gap:16px;flex-wrap:wrap}
 .footer .desc{margin-top:12px;text-align:center;font-size:14px;opacity:.8;line-height:1.5}
 
-/* AUTH MODAL OVERLAY – mờ vừa để vẫn thấy giao diện chính */
-/* Overlay mờ nhẹ để vẫn thấy nền */
+/* ===== AUTH MODAL OVERLAY – nền mờ + blur ===== */
 .overlay{
   position:fixed; inset:0;
-  background:rgba(11,18,32,0.35);
-  backdrop-filter:blur(2px);
-  display:flex; justify-content:center; align-items:center;
+  background:rgba(11,18,32,0.38);           /* nền mờ */
+  backdrop-filter:blur(3px);                /* blur nền */
+  -webkit-backdrop-filter:blur(3px);
+  display:none;                             /* ẩn mặc định */
+  justify-content:center; align-items:center;
   z-index:200;
 }
+/* mở overlay bằng cách thêm class .open (JS sẽ làm) */
+.overlay.open{ display:flex; }
 
 /* Khung modal */
-.auth-card{ position:relative; display:flex; width:700px; max-width:95%;
+.auth-card{ position:relative; display:flex; width:720px; max-width:95%;
   border-radius:12px; overflow:hidden; background:var(--surface);
-  box-shadow:0 10px 40px rgba(0,0,0,.5); animation:fadeIn .3s ease; }
-
-/* Close ở góc ngoài (trên nền ảnh) */
-.auth-close{
-  position:absolute; top:10px; right:10px;
-  background:rgba(0,0,0,.45); border:none; color:#fff;
-  width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:18px;
-}
-.auth-close:hover{ background:rgba(0,0,0,.6); }
-
-/* Close nhỏ trong phần tiêu đề form */
-.auth-head{ display:flex; align-items:center; justify-content:space-between; }
-.auth-close.small{
-  position:static; width:28px; height:28px; font-size:16px;
-  background:transparent; color:#aab7cf; border:1px solid var(--border);
-}
-.auth-close.small:hover{ color:#fff; background:rgba(255,255,255,.06); }
-
-/* Nút 'Đóng' dạng link ở cuối form */
-.btn.link{
-  background:transparent; border:none; color:#aab7cf; padding:6px 0; cursor:pointer;
-}
-.btn.link:hover{ color:#fff; text-decoration:underline; }
-
-
-/* Preset: bạn có thể đổi giữa 2 cấp mờ chỉ bằng class */
-.overlay.soft  { background: rgba(11,18,32,0.38); backdrop-filter: blur(2px); }
-.overlay.hard  { background: rgba(11,18,32,0.72); backdrop-filter: blur(4px); }
-
-
-.auth-card {
-  position: relative;
-  display: flex;
-  width: 720px;
-  max-width: 95%;
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--surface);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  animation: fadeIn .3s ease;
-}
-
+  border:1px solid var(--border);
+  box-shadow:0 10px 40px rgba(0,0,0,.5); animation:fadeIn .25s ease; }
 .auth-left { flex: 1; position: relative; min-width: 40%; }
 .auth-left img{ width:100%; height:100%; object-fit:cover;}
 .auth-left .brand{
@@ -141,21 +104,32 @@ img{display:block;max-width:100%}
 .auth-left .brand img{ width:32px; height:32px; border-radius:50%; }
 
 .auth-right{ flex:1; padding:24px; display:flex; flex-direction:column; gap:12px; }
-.auth-right h3{ margin:0 0 4px; }
+.auth-right h3{ margin:0 0 6px; }
 .auth-right input{ padding:10px; border-radius:6px; border:1px solid var(--border); background:#fff; color:#000; }
 .auth-right .btn.full{ width:100%; }
-.auth-right .btn.google{ background:#fff; color:#444; border:1px solid #ccc; font-weight:500; }
-.auth-right .btn.google:hover{ background:#f5f5f5; }
 .muted{ font-size:14px; opacity:.85; }
 .muted.small{ font-size:12px; }
 .captcha{ background:#1a2a46; color:#8fda8f; font-size:14px; padding:6px 10px; border-radius:6px; }
 
 .auth-close{
-  position:absolute; top:10px; right:10px; background:rgba(0,0,0,.3); border:none; color:#fff;
+  position:absolute; top:10px; right:10px; background:rgba(0,0,0,.35); border:none; color:#fff;
   font-size:18px; width:28px; height:28px; border-radius:50%; cursor:pointer;
 }
+.auth-right .auth-close.small{
+  position:static; width:28px; height:28px; font-size:16px;
+  background:transparent; color:#aab7cf; border:1px solid var(--border);
+}
+.auth-right .auth-close.small:hover{ color:#fff; background:rgba(255,255,255,.06); }
 
-@keyframes fadeIn{ from{opacity:0; transform:translateY(-20px);} to{opacity:1; transform:translateY(0);} }
+.btn.link{
+  background:transparent; border:none; color:#aab7cf; padding:6px 0; cursor:pointer;
+}
+.btn.link:hover{ color:#fff; text-decoration:underline; }
+
+@keyframes fadeIn{ from{opacity:0; transform:translateY(-16px);} to{opacity:1; transform:translateY(0);} }
+
+/* Khoá scroll khi mở modal */
+body.modal-open{ overflow:hidden; }
 
 /* Responsive */
 @media (max-width:1100px){ .track{grid-template-columns:repeat(4,1fr)} }
@@ -166,4 +140,41 @@ img{display:block;max-width:100%}
   .ctrl.left{left:-12px}.ctrl.right{right:-12px}
   .auth-card{flex-direction:column; width:95%}
   .auth-left{min-height:160px}
+}
+/* Định vị để menu bám góc phải khu header */
+.header .row { position: relative; }
+
+/* Menu người dùng nhỏ gọn */
+.user-menu{
+  position: absolute;
+  top: 60px;                /* dưới header */
+  right: 0;                 /* dính mép phải container header */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  min-width: 180px;
+  padding: 8px;
+  z-index: 300;
+}
+.user-menu .item{
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.user-menu .item:hover{
+  background: rgba(255,255,255,.06);
+}
+.user-menu .item.danger{
+  color: #ffd1d1;
+}
+.user-menu .item.danger:hover{
+  background: rgba(220,38,38,.18);
 }

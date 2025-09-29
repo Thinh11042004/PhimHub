@@ -37,6 +37,13 @@
         <a id="avatar-btn" class="avatar" href="profile.html" title="Tài khoản" style="display:none">
           <img src="assets/img/avatar.jpg" alt="me" />
         </a>
+        <!-- Mini user menu (ẩn sẵn, chỉ hiện sau khi đăng nhập) -->
+        <div id="user-menu" class="user-menu" style="display:none">
+          <a class="item" href="profile.html">Trang cá nhân</a>
+          <a class="item" href="favorites.html">Yêu thích</a>
+          <a class="item" href="playlist.html">Danh sách của tôi</a>
+          <button id="logout-btn" class="item danger" type="button">Đăng xuất</button>
+        </div>
       </div>
     </header>
 
@@ -144,7 +151,7 @@
       </p>
     </footer>
 
-    <!-- ===== AUTH MODALS (popup) để home.js điều khiển ===== -->
+    <!-- ===== AUTH MODALS (popup) dùng chung cho index — đã gắn ID giống login/register gốc) ===== -->
     <div id="auth-overlay" class="overlay" style="display:none">
       <!-- LOGIN -->
       <div id="login-modal" class="auth-card" style="display:none">
@@ -157,13 +164,22 @@
           </div>
         </div>
         <div class="auth-right">
-          <h3>Đăng nhập</h3>
-          <span class="muted small">Nếu bạn chưa có tài khoản, <a href="#" id="to-register">đăng ký ngay</a></span>
-          <input type="email" placeholder="Email hoặc tài khoản" />
-          <input type="password" placeholder="Mật khẩu" />
-          <div class="captcha">✔ Thành công! Fake Captcha</div>
-          <button class="btn primary full">Đăng nhập</button>
-          <span class="muted small">Quên mật khẩu?</span>
+          <div class="auth-head">
+            <h3 id="login-title">Đăng nhập</h3>
+          </div>
+
+          <p class="muted small">Nếu bạn chưa có tài khoản, <a href="#" id="to-register">đăng ký ngay</a></p>
+
+          <!-- ⚠️ ID giống login.html/login.js -->
+          <input id="login-username" type="text" placeholder="Email hoặc tài khoản" />
+          <input id="login-password" type="password" placeholder="Mật khẩu" />
+          <div id="login-error" class="muted small" style="display:none;color:#ffb3b3;margin:-6px 0 6px"></div>
+
+          <div class="captcha">✔ Thành công! <span>Fake Captcha</span></div>
+
+          <button id="btn-login" class="btn primary full">Đăng nhập</button>
+          <a href="#" class="muted small">Quên mật khẩu?</a>
+
           <button class="btn google full">Đăng nhập bằng Google</button>
         </div>
       </div>
@@ -179,13 +195,19 @@
           </div>
         </div>
         <div class="auth-right">
-          <h3>Đăng ký</h3>
-          <span class="muted small">Đã có tài khoản? <a href="#" id="to-login">Đăng nhập</a></span>
-          <input type="text" placeholder="Tên người dùng" />
-          <input type="email" placeholder="Email" />
-          <input type="password" placeholder="Mật khẩu" />
-          <input type="password" placeholder="Nhập lại mật khẩu" />
-          <button class="btn primary full">Đăng ký</button>
+          <div class="auth-head">
+            <h3 id="register-title">Đăng ký</h3>
+          </div>
+
+          <p class="muted small">Đã có tài khoản? <a href="#" id="to-login">Đăng nhập</a></p>
+
+          <!-- ⚠️ ID giống register.html -->
+          <input id="reg-name" type="text" placeholder="Tên người dùng" />
+          <input id="reg-username" type="text" placeholder="Email hoặc tài khoản" />
+          <input id="reg-password" type="password" placeholder="Mật khẩu" />
+          <input id="reg-repassword" type="password" placeholder="Nhập lại mật khẩu" />
+
+          <button id="btn-register" class="btn primary full">Đăng ký</button>
           <button class="btn google full">Đăng ký bằng Google</button>
         </div>
       </div>
@@ -193,5 +215,7 @@
     <!-- ===== /AUTH MODALS ===== -->
 
     <script src="assets/js/home.js"></script>
+    <!-- JS modal: gom logic từ login.js + register.html -->
+    <script type="module" src="assets/js/modal-auth.js"></script>
   </body>
 </html>

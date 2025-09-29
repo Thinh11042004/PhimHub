@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chỉnh thể loại · Quản trị · PhimHUB</title>
+
+  <!-- Theme chung + CSS admin dùng chung -->
+  <link rel="stylesheet" href="assets/css/home.css" />
+  <link rel="stylesheet" href="assets/css/admin-shared.css" />
+
+  <style>
+    /* Bổ sung nhẹ cho trang thể loại */
+    .genres-layout{ display:grid; grid-template-columns: 1fr 260px; gap:20px; padding:26px 0 40px }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px }
+    .card-body{ padding:18px }
+    .h2{ margin:4px 0 14px }
+    .chips-wrap{ display:flex; flex-wrap:wrap; gap:10px }
+    .g-chip{
+      padding:10px 14px; border-radius:999px; border:1px solid var(--border);
+      background:rgba(255,255,255,.06); cursor:pointer
+    }
+    .g-chip.active{ outline:2px solid var(--primary); background:rgba(255,173,169,.12) }
+    .row{ display:flex; gap:10px; align-items:center }
+    .mt{ margin-top:10px } .mt-lg{ margin-top:16px }
+    .btn.block{ width:100% }
+    .btn.ghost{ background:transparent; border:1px dashed var(--border) }
+
+    /* Modal */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; padding:20px; z-index:1000 }
+    .modal.show{ display:flex }
+    .modal-card{ width:min(620px,92%); background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px }
+    .modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+    .modal-head h3{ margin:0 }
+    .close{ border:0; background:transparent; font-size:22px; cursor:pointer; line-height:1 }
+    .input{ background:#fff; color:#000; border:1px solid var(--border); border-radius:10px; padding:12px 14px }
+    .select{ appearance:none }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container row">
+      <a class="logo" href="index.html" title="Về trang chủ">
+        <img src="assets/img/logo.jpg" alt="logo" class="logo-img" />
+        <span>PhimHUB</span>
+      </a>
+      <nav class="nav">
+        <a href="#">Thể loại</a>
+        <a href="list.html">Trending</a>
+        <a href="list.html">Phim lẻ</a>
+        <a href="series.html">Phim bộ</a>
+      </nav>
+      <div class="search"><span>🔍</span><input placeholder="Tìm phim, diễn viên"/></div>
+      <!-- Ẩn hai nút auth – chỉ dùng avatar khi đã đăng nhập -->
+      <div id="auth-actions" class="auth" style="display:none">
+        <a class="btn js-open-login" href="#">Đăng nhập</a>
+        <a class="btn primary js-open-register" href="#">Đăng ký</a>
+      </div>
+      <a id="avatar-btn" class="avatar" href="profile.html" title="Tài khoản" style="display:none">
+        <img id="avatar-small" src="assets/img/avatar.jpg" alt="me" />
+      </a>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <main class="container genres-layout">
+    <!-- LEFT: BOARD -->
+    <section class="card">
+      <div class="card-body">
+        <h2 class="h2">Điều chỉnh các thể loại phim</h2>
+
+        <div id="chips" class="chips-wrap"></div>
+
+        <div class="row mt-lg">
+          <button type="button" id="btn-add-open" class="btn">➕ Thêm thể loại</button>
+          <button type="button" id="btn-rename-open" class="btn ghost">🔧 Thay đổi thể loại</button>
+        </div>
+
+        <div class="mt-lg">
+          <button type="button" id="btn-save" class="btn primary block">👍 Xác nhận thay đổi</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: SIDEBAR ADMIN (dùng CSS admin-shared) -->
+    <aside class="admin-side">
+      <a class="sbtn" href="profile.html">👤 Tài khoản</a>
+      <a class="sbtn" href="upload-movie.html">🎬 Tải Phim lẻ mới</a>
+      <a class="sbtn" href="upload-series.html">📺 Tải Phim bộ mới</a>
+      <a class="sbtn active" href="admin-genres.html">🧩 Chỉnh thể loại phim</a>
+      <a class="sbtn" href="admin-users.html">👥 Quản lý người dùng</a>
+      <a class="sbtn" href="index.html">🏠 Trang chủ</a>
+      <button id="btn-logout" class="btn block danger mt">Đăng xuất</button>
+    </aside>
+  </main>
+
+  <!-- MODAL: Đổi tên -->
+  <div id="modal-rename" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Thay đổi thể loại</h3>
+        <button type="button" class="close" data-close="modal-rename">✕</button>
+      </div>
+      <div class="row">
+        <select id="rename-from" class="input select" style="min-width:220px"></select>
+        <span style="font-size:22px">➡</span>
+        <div class="input-combo" style="flex:1; display:flex; gap:8px; align-items:center">
+          <input id="rename-to" class="input" placeholder="Nhập tên mới" />
+          <button type="button" class="pill-x" data-clear="#rename-to" title="Xoá">×</button>
+        </div>
+      </div>
+      <button type="button" id="rename-confirm" class="btn primary block mt-lg">👍 Xác nhận thay đổi</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Thêm mới -->
+  <div id="modal-add" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Thêm thể loại</h3>
+        <button type="button" class="close" data-close="modal-add">✕</button>
+      </div>
+      <div class="row">
+        <div class="input-combo" style="flex:1; display:flex; gap:8px; align-items:center">
+          <input id="add-name" class="input" placeholder="Nhập tên thể loại mới" />
+          <button type="button" class="pill-x" data-clear="#add-name" title="Xoá">×</button>
+        </div>
+      </div>
+      <button type="button" id="add-confirm" class="btn primary block mt-lg">👍 Xác nhận thay đổi</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="cols">
+      <a class="logo" href="index.html"><img src="assets/img/logo.jpg" class="logo-img small"/><span>PhimHUB</span></a>
+      <div class="links"><a href="#">Liên hệ</a><a href="#">Giới thiệu</a><a href="#">Điều khoản</a><a href="#">Hỏi đáp</a></div>
+    </div>
+    <p class="desc">PhimHUB — Nơi xem phim cho những người tài chính eo hẹp…</p>
+  </footer>
+
+  <script src="assets/js/admin-genres.js"></script>
+</body>
+</html>
