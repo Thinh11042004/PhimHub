@@ -5,7 +5,7 @@ import { useUI } from "../../store/ui";
 import { MovieService } from "../../services/movies";
 import { getAvatarUrlWithFallback } from "../../utils/avatarUtils";
 import defaultAvatar from "../../assets/avatar.jpg";
-import logo from "../../assets/logo2.png";
+import logo from "../../assets/phimhub-logo-dark.png";
 
 function NavItem({ to, children, isScrolled }: { to: string; children: React.ReactNode; isScrolled: boolean }) {
   return (
