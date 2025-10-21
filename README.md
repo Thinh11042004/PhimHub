@@ -2,10 +2,10 @@
 
 <div align="center">
 
-<!-- Hero Banner using project images (dark/light) -->
+<!-- Hero Banner using local assets (dark/light) -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="frontend/public/assets/branding/phimhub-logo-light.png" />
-  <img src="frontend/public/assets/branding/phimhub-logo-dark.png" alt="PhimHub Banner" width="900" />
+  <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/branding/phimhub-logo-light.png" />
+  <img src="frontend/src/assets/branding/phimhub-logo-dark.png" alt="PhimHub Banner" width="900" />
 </picture>
 
 <br />
@@ -18,10 +18,10 @@
 
 <p><em>An enterprise-grade, full‑stack movie streaming platform with Clean Architecture and a modern, maintainable codebase.</em></p>
 
-<!-- App Preview using project images (dark/light) -->
+<!-- App Preview using local assets (dark/light) -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="frontend/public/assets/branding/phimhub-logo-light.png" />
-  <img src="frontend/public/assets/branding/phimhub-logo-dark.png" alt="PhimHub Preview" width="700" />
+  <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/branding/phimhub-logo-light.png" />
+  <img src="frontend/src/assets/branding/phimhub-logo-dark.png" alt="PhimHub Preview" width="700" />
 </picture>
 
 </div>
@@ -60,21 +60,38 @@
 
 PhimHub is designed for scalability and long-term maintainability. The frontend and backend communicate via REST APIs, with clear boundaries between presentation and business concerns.
 
-<div align="center">
+### System Diagram (Mermaid)
+```mermaid
+flowchart LR
+  user[User Browser]
+  ui[React SPA\n(Vite + Tailwind + Zustand)]
+  api[Express API\n(Node.js + TypeScript)]
+  svc[Services\n(Business Logic)]
+  repo[Repositories\n(Data Access)]
+  db[(SQL Server)]
+  ext1[[TMDB API]]
+  ext2[[PhimAPI]]
+  nginx[(Nginx\nStatic Hosting)]
 
-<!-- Architecture Diagram (replace with your own diagram when available) -->
-<img src="https://via.placeholder.com/1200x600/111111/a7f3d0?text=PhimHub+Clean+Architecture+Diagram" alt="Architecture Diagram" />
-
-</div>
-
+  user -->|HTTPS| ui
+  ui <--> |HTTP / JSON| api
+  ui --> nginx
+  api --> svc
+  svc --> repo
+  repo --> db
+  svc --> ext1
+  svc --> ext2
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    🎬 PHIMHUB ARCHITECTURE                   │
-├─────────────────────────────────────────────────────────────┤
-│  Frontend (React SPA)  ◄──────►  Backend API (Express)      │
-│       Zustand / Axios                Services / Repos       │
-│                                          SQL Server         │
-└─────────────────────────────────────────────────────────────┘
+
+### Clean Architecture Layers (Mermaid)
+```mermaid
+graph TB
+  A[🎨 Presentation\nControllers, Middlewares, Routes] --> B[💼 Business\nServices, Use Cases]
+  B --> C[💾 Data Access\nRepositories, Models, Migrations]
+  C --> D[🗄️ Infrastructure\nDB Connection, External APIs, Email, File Storage]
+
+  classDef layer fill:#0b1020,stroke:#1f2937,color:#e5e7eb,stroke-width:1px;
+  class A,B,C,D layer;
 ```
 
 ---
@@ -91,11 +108,11 @@ Clean Architecture separates code into concentric layers with one core rule: inn
 Dependency rule: Presentation → Business → Data → Infrastructure (only inward dependencies).
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                  CLEAN ARCHITECTURE                     │
-├─────────────────────────────────────────────────────────┤
+┌─────────────────────────────────────────────────────────────┐
+│                  CLEAN ARCHITECTURE                         │
+├─────────────────────────────────────────────────────────────┤
 │  🎨 Presentation  →  💼 Business  →  💾 Data  →  🗄️ Infra │
-└─────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────┘
 ```
 
 Why it matters
@@ -170,26 +187,123 @@ Infrastructure
 
 ## 📁 Project Structure
 
+Below is the full high‑level layout with comments describing what lives in each directory. Use this as a map when adding features or debugging.
+
 ```
 phimhub/
-├─ backend/
-│  ├─ src/
-│  │  ├─ controllers/        # Presentation
-│  │  ├─ services/           # Business
-│  │  ├─ models/             # Data
-│  │  ├─ config/             # Infrastructure
-│  │  ├─ migrations/         # Database schema
-│  │  └─ index.ts            # API entrypoint
-│  └─ package.json
-├─ frontend/
-│  ├─ src/
-│  │  ├─ features/           # Feature-based UI
-│  │  ├─ shared/ components/ services/ store/ utils/
-│  │  └─ main.tsx
-│  └─ package.json
-├─ docker-compose.yml
-└─ README.md
+├─ docker-compose.yml              # Orchestrates frontend, backend, DB, and seed jobs
+├─ README.md                       # Project documentation (you are here)
+├─ start-backend.bat               # Windows helper to run backend in dev
+├─ start-frontend.bat              # Windows helper to run frontend in dev
+├─ TEST_MANUAL_CHECKLIST.md        # Manual QA checklist
+├─ db_moi1.bacpac                  # SQL Server database backup used by seeding
+│
+├─ backend/                        # Node.js + Express API (TypeScript)
+│  ├─ Dockerfile                   # Container image for the API server
+│  ├─ env.example                  # Example .env with all supported variables
+│  ├─ package.json                 # Dependencies and NPM scripts
+│  ├─ tsconfig.json                # TypeScript compiler settings
+│  ├─ uploads/                     # Local dev uploads (e.g., avatars)
+│  │  └─ avatars/
+│  └─ src/
+│     ├─ index.ts                  # Application entrypoint (Express bootstrap)
+│     │                            #  - Creates app, registers middlewares, routes, error handler
+│     │                            #  - Starts HTTP server and init DB connection
+│     ├─ config/
+│     │  └─ database.ts            # SQL Server connection/pool configuration
+│     ├─ controllers/              # 🎨 Presentation layer (HTTP handlers only)
+│     │  ├─ actor.controller.ts    #  - Validates/parses req, calls service, shapes response
+│     │  ├─ auth.controller.ts     #  - Register, login, refresh, logout
+│     │  ├─ customList.controller.ts
+│     │  ├─ director.controller.ts
+│     │  ├─ favorites.controller.ts
+│     │  ├─ genre.controller.ts
+│     │  ├─ movie.controller.ts
+│     │  ├─ tmdb.controller.ts     #  - Endpoints proxying external TMDB/PhimAPI services
+│     │  └─ watchHistory.controller.ts
+│     ├─ middlewares/              # Cross‑cutting concerns
+│     │  ├─ auth.middleware.ts     #  - JWT verification, attach req.user
+│     │  ├─ error.middleware.ts    #  - Centralized error -> uniform JSON response
+│     │  └─ upload.middleware.ts   #  - Multer config, file type/size validation
+│     ├─ services/                 # 💼 Business logic (framework‑agnostic)
+│     │  ├─ actor.service.ts       #  - Orchestrates domain rules, calls repositories
+│     │  ├─ CustomListService.ts
+│     │  ├─ director.service.ts
+│     │  ├─ email.service.ts       #  - Nodemailer wrapper, email templates
+│     │  ├─ external-api.service.ts#  - TMDB/PhimAPI integrations
+│     │  ├─ FavoritesService.ts
+│     │  ├─ movie-import.service.ts#  - Import jobs, data mappers
+│     │  ├─ tmdb.service.ts
+│     │  └─ user.service.ts
+│     ├─ models/                   # 💾 Data access layer (repositories)
+│     │  ├─ BaseRepository.ts      #  - Shared DB helpers (queries, pagination)
+│     │  ├─ ActorRepository.ts     #  - Entity‑specific CRUD/query methods
+│     │  └─ ...                    #  - Other repositories (Genres, Movies, Users, etc.)
+│     ├─ db/
+│     │  └─ migrator.ts            # Migration runner (applies SQL files in order)
+│     ├─ migrations/               # SQL migration files (versioned schema)
+│     │  ├─ 001_create_database_schema.sql
+│     │  ├─ 002_add_slug_to_movies.sql
+│     │  └─ ...                    #  - Keep new schema changes in new numbered files
+│     ├─ routes/                   # Express Router composition (group routes/modules)
+│     ├─ scripts/                  # Utility scripts (e.g., admin tasks, data fixes)
+│     ├─ types/                    # Global TS types, DTOs, request/response contracts
+│     └─ utils/                    # Small helpers (slugify, pagination, error factories)
+│
+├─ frontend/                       # React 18 + TS (Vite) SPA
+│  ├─ Dockerfile                   # Multi‑stage build -> Nginx static server
+│  ├─ nginx.conf                   # SPA routing (history fallback) & headers
+│  ├─ index.html                   # SPA root HTML
+│  ├─ package.json                 # Dependencies and scripts
+│  ├─ vite.config.ts               # Vite config (aliases, env, build)
+│  ├─ tailwind.config.js           # Tailwind setup
+│  ├─ postcss.config.js            # Tailwind/PostCSS pipeline
+│  ├─ public/                      # Static files served at '/'
+│  │  └─ assets/                   #  - Put static assets that shouldn't be bundled
+│  └─ src/
+│     ├─ main.tsx                  # App entry (providers, router, render)
+│     ├─ index.css / styles.css    # Global styles
+│     ├─ assets/                   # Images/icons imported into bundle (e.g., branding)
+│     │  └─ branding/              #  - Project logos; import via `import` in components
+│     ├─ app/                      # App shell/layout/providers (if present)
+│     ├─ components/               # Reusable, app‑wide UI components
+│     ├─ config/                   # Frontend configuration (env, constants)
+│     ├─ features/                 # Feature‑oriented folders (route‑scoped UI)
+│     │  ├─ account/               #  - Profile, settings, password flows
+│     │  ├─ admin/                 #  - Admin dashboard, user/content mgmt
+│     │  ├─ catalog/               #  - Browsing, search, filters
+│     │  ├─ interactions/          #  - Favorites, watchlists, ratings
+│     │  └─ watch/                 #  - Player page, HLS integration
+│     ✧  Inside each feature: components/ pages/ hooks/ store/ services/
+│     ├─ hooks/                    # Cross‑feature custom hooks
+│     ├─ pages/                    # Route‑level components (if not inside features)
+│     ├─ services/                 # Axios instance, API clients, interceptors
+│     ├─ shared/                   # Shared UI primitives, icons, constants
+│     ├─ store/                    # Zustand slices/selectors
+│     └─ utils/                    # Utility functions (format, guards, helpers)
+│
+└─ seed/                           # DB import tooling for local/dev
+   ├─ Dockerfile                   # Ubuntu + sqlpackage + import entrypoint
+   └─ import.sh                    # Imports .bacpac into SQL Server container
 ```
+
+### How to add a new API endpoint (backend)
+1. Define route in `backend/src/routes` and map to a controller method.
+2. Implement handler in `backend/src/controllers/*.controller.ts` (HTTP only).
+3. Add business logic in an appropriate `backend/src/services/*.service.ts`.
+4. Persist/query via a repository in `backend/src/models/*Repository.ts`.
+5. If schema changes are needed, add a new SQL file in `backend/src/migrations` and run the migrator.
+
+### How to add a new UI feature (frontend)
+1. Create a folder under `frontend/src/features/<feature-name>`.
+2. Add `pages/`, `components/`, `services/` (API calls), and optional `store/` (Zustand slice).
+3. Register the route in your router and compose UI from feature components.
+4. Reuse `shared/` components and `services/axios` client.
+
+### Environment and configuration
+- Backend environment: see `backend/env.example` and your `.env` file.
+- Frontend environment: use Vite `import.meta.env.*` (e.g., `VITE_API_URL`).
+- Docker: `docker-compose.yml` wires services (frontend, backend, database, seed).
 
 ---
 
@@ -365,7 +479,7 @@ MIT © 2024 PhimHub
 
 - Issues & Feature Requests: GitHub Issues
 - Discussions: GitHub Discussions
-- Email: support@localhost
+- Email: ntt112004h@gmail.com
 
 <div align="center">
 
