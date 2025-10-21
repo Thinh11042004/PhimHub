@@ -1,0 +1,1 @@
+// useSeries admin hook
