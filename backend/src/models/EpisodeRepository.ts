@@ -1,4 +1,3 @@
-import sql from 'mssql';
 import { BaseRepository } from './BaseRepository';
 import { Episode, CreateEpisodeRequest } from '../types/database';
 

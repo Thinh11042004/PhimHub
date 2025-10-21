@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/build
+.git
+.gitignore
+Dockerfile
+**/.env*
+**/uploads/*
+!backend/uploads/.gitkeep
+**/coverage
+**/.vscode
+**/.DS_Store

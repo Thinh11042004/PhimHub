@@ -1,4 +1,3 @@
-import sql from 'mssql';
 import { BaseRepository } from './BaseRepository';
 import { User, UserWithRole, CreateUserRequest, UpdateUserRequest, UserQuery } from '../types/database';
 

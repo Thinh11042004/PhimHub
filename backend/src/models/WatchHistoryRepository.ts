@@ -1,4 +1,3 @@
-import sql from 'mssql';
 import { BaseRepository } from './BaseRepository';
 
 export interface WatchHistory {

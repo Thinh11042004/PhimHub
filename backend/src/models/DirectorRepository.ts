@@ -1,6 +1,6 @@
 import { BaseRepository } from './BaseRepository';
 import { Director } from '../types/director';
-import sql from 'mssql';
+
 
 export class DirectorRepository extends BaseRepository<Director> {
   protected tableName = 'directors';

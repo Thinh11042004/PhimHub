@@ -44,6 +44,7 @@ type PosterCardProps = {
   showAge?: boolean;
   showDuration?: boolean;
   progress?: number;
+  showActions?: boolean;
 };
 
 export default function PosterCard({
@@ -56,6 +57,7 @@ export default function PosterCard({
   showAge = true,
   showDuration = true,
   progress,
+  showActions = true,
   watchHistory = []
 }: PosterCardProps & { watchHistory?: WatchHistoryItem[] }) {
   const navigate = useNavigate();
@@ -73,6 +75,11 @@ export default function PosterCard({
 
   const item = movie || series;
   const isSeries = !!series;
+
+  // Guard: ensure we have either a movie or a series
+  if (!item) {
+    return null;
+  }
 
   // Size configurations
   const sizeConfig = {
@@ -167,9 +174,9 @@ export default function PosterCard({
     if (item.provider) {
       try {
         const detailData = await MovieService.use(item.provider as any).getMovieById(item.id);
-        const isSeriesData = detailData?.isSeries === true;
+        const isSeriesData = (detailData as any)?.isSeries === true;
         // Use slug if available, otherwise use id
-        const identifier = detailData?.slug || item.id;
+        const identifier = (detailData as any)?.slug ?? item.id;
         navigate(`${isSeriesData ? "/series" : "/movies"}/${identifier}?provider=${item.provider}`);
         return;
       } catch {
@@ -184,9 +191,9 @@ export default function PosterCard({
     if (item.provider) {
       try {
         const detailData = await MovieService.use(item.provider as any).getMovieById(item.id);
-        const isSeriesData = detailData?.isSeries === true;
+        const isSeriesData = (detailData as any)?.isSeries === true;
         // Use slug if available, otherwise use id
-        const identifier = detailData?.slug || item.id;
+        const identifier = (detailData as any)?.slug ?? item.id;
         
         if (isSeriesData) {
           // Check for episode in watch history
@@ -375,59 +382,58 @@ export default function PosterCard({
               <h3 className="text-xl font-bold text-white mb-4 line-clamp-2 leading-tight">{item.title}</h3>
               
               {/* Action Buttons */}
-              <div className="flex gap-2 mb-4">
-                <button
-                  onClick={handleWatchClick}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-3 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-blue-500/25 text-sm"
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M8 5v10l8-5-8-5z"/>
-                    </svg>
-                    Xem ngay
-                  </span>
-                </button>
-                <button
-                  onClick={handleFavoriteClick}
-                  className={`px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                    (() => {
+              {showActions && (
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={handleWatchClick}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-3 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-blue-500/25 text-sm"
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M8 5v10l8-5-8-5z"/>
+                      </svg>
+                      Xem ngay
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleFavoriteClick}
+                    className={`px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                      (() => {
+                        const token = localStorage.getItem('phimhub:token');
+                        return token && isFavorited 
+                          ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' 
+                          : 'bg-white/10 text-white hover:bg-white/20 border border-white/20';
+                      })()
+                    }`}
+                    title={(() => {
                       const token = localStorage.getItem('phimhub:token');
-                      return token && isFavorited 
-                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' 
-                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/20';
-                    })()
-                  }`}
-                  title={(() => {
-                    const token = localStorage.getItem('phimhub:token');
-                    return token ? (isFavorited ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích") : "Đăng nhập để yêu thích";
-                  })()}
-                >
-                  <svg className="w-4 h-4" fill={(() => {
-                    const token = localStorage.getItem('phimhub:token');
-                    return token && isFavorited ? "currentColor" : "none";
-                  })()} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleAddToListClick}
-                  className="px-3 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-all duration-200"
-                  title="Thêm vào danh sách"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleCardClick}
-                  className="px-3 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-all duration-200"
-                  title="Xem chi tiết"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-              </div>
+                      return token && isFavorited ? 'Bỏ yêu thích' : 'Thêm vào yêu thích';
+                    })()}
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15a7 7 0 0014 0v-3a5 5 0 10-10 0v3" />
+                      </svg>
+                      {(() => {
+                        const token = localStorage.getItem('phimhub:token');
+                        return token && isFavorited ? 'Đã thích' : 'Yêu thích';
+                      })()}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleAddToListClick}
+                    className="px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200 text-sm"
+                    title="Thêm vào danh sách"
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Danh sách
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {/* Metadata Tags */}
               <div className="flex flex-wrap gap-2 mb-3">

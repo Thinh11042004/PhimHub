@@ -1,0 +1,78 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: phimhub-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=PhimHub123!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+
+  db-seed:
+    build:
+      context: ./seed
+      dockerfile: Dockerfile
+    container_name: phimhub-db-seed
+    depends_on:
+      - sqlserver
+    volumes:
+      - ../db_moi1.bacpac:/data/db.bacpac:ro
+    environment:
+      - DB_HOST=sqlserver
+      - DB_PORT=1433
+      - DB_USER=sa
+      - DB_PASS=PhimHub123!
+      - DB_NAME=PhimHub
+      - SLEEP_SECONDS=10
+      - MAX_RETRIES=40
+      - RETRY_DELAY=5
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: phimhub-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:8080
+      - JWT_SECRET=change-me
+      - DB_HOST=sqlserver
+      - DB_PORT=1433
+      - DB_USER=sa
+      - DB_PASS=PhimHub123!
+      - DB_NAME=PhimHub
+      - DB_ENCRYPT=true
+      - DB_TRUST_SERVER_CERT=true
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      sqlserver:
+        condition: service_started
+      db-seed:
+        condition: service_completed_successfully
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    command: ["sh", "-c", "node scripts/wait-for.mjs sqlserver:1433 --timeout 120 && node dist/index.js"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: phimhub-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data: {}
