@@ -2,12 +2,6 @@
 
 <div align="center">
 
-<!-- Hero Banner using local assets (dark/light) -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/branding/phimhub-logo-light.png" />
-  <img src="frontend/src/assets/branding/phimhub-logo-light.png" alt="PhimHub Banner" width="900" />
-</picture>
-
 <br />
 
 <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" /></a>
