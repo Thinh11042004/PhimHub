@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import dotenv from 'dotenv';
 import path from 'path';
 import sql from 'mssql';
@@ -21,6 +20,13 @@ import { errorHandler } from './middlewares/error.middleware';
 import Database from './config/database';
 import Migrator from './db/migrator';
 
+/**
+ * HTTP API bootstrapper (composition root)
+ * - Wires middleware, routes, and cross-cutting concerns
+ * - No business logic here; delegates to controllers/services
+ */
+// Note: helmet is intentionally omitted during development to avoid CORS/embed issues
+
 // Load environment variables
 dotenv.config();
 
@@ -30,11 +36,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware - Disable helmet for development to avoid CORS issues
-// app.use(helmet({
-//   crossOriginResourcePolicy: { policy: "cross-origin" },
-//   crossOriginEmbedderPolicy: false
-// }));
 app.use(cors({
   origin: [
     'http://localhost:5173', 
@@ -52,6 +53,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
 }));
+
+// Middleware stack kept minimal; add security headers in production via reverse proxy or helmet
 
 // Set charset to UTF-8 for all responses
 app.use((req, res, next) => {

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { FavoritesService } from '../services/FavoritesService';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../middlewares/error.middleware';
 
 interface AuthenticatedRequest extends Request {
   user?: {
