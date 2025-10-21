@@ -2,8 +2,11 @@
 
 <div align="center">
 
-<!-- Hero Banner (replace with your own image when available) -->
-<img src="https://via.placeholder.com/1200x360/1a1a1a/ffffff?text=PhimHub+Movie+Streaming+Platform" alt="PhimHub Banner" />
+<!-- Hero Banner using project images (dark/light) -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="frontend/public/assets/branding/phimhub-logo-light.png" />
+  <img src="frontend/public/assets/branding/phimhub-logo-dark.png" alt="PhimHub Banner" width="900" />
+</picture>
 
 <br />
 
@@ -15,8 +18,11 @@
 
 <p><em>An enterprise-grade, full‑stack movie streaming platform with Clean Architecture and a modern, maintainable codebase.</em></p>
 
-<!-- App Preview (replace with real screenshots when available) -->
-<img src="https://via.placeholder.com/1200x600/0b1020/ffffff?text=PhimHub+Preview+Screenshots" alt="PhimHub Preview" />
+<!-- App Preview using project images (dark/light) -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="frontend/public/assets/branding/phimhub-logo-light.png" />
+  <img src="frontend/public/assets/branding/phimhub-logo-dark.png" alt="PhimHub Preview" width="700" />
+</picture>
 
 </div>
 
@@ -365,6 +371,6 @@ MIT © 2024 PhimHub
 
 ⭐ Star this repo if it helps you.
 
-<a href="http://localhost:8080">Homepage</a> • <a href="./README.md">Documentation</a> • <a href="https://github.com/phimhub/phimhub/issues">Report Bug</a>
+<a href="http://localhost:8080">Homepage</a> • <a href="./README.md">Documentation</a> • <a href="https://github.com/Thinh11042004/PhimHub/issues">Report Bug</a>
 
 </div>
