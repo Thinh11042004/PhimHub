@@ -5,7 +5,7 @@
 <!-- Hero Banner using local assets (dark/light) -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/branding/phimhub-logo-light.png" />
-  <img src="frontend/src/assets/branding/phimhub-logo-dark.png" alt="PhimHub Banner" width="900" />
+  <img src="frontend/src/assets/branding/phimhub-logo-light.png" alt="PhimHub Banner" width="900" />
 </picture>
 
 <br />
