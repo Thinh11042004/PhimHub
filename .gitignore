@@ -134,7 +134,8 @@ __tests__/
 *.sqlite
 *.sqlite3
 *.bacpac
-*.sql
+# Do NOT ignore SQL migration files
+# (remove generic *.sql ignore to keep backend/migrations/*.sql tracked)
 
 # Backup files
 *.backup
