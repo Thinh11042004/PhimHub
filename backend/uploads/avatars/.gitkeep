@@ -1,0 +1,2 @@
+# This file ensures the avatars directory structure is preserved in git
+# while ignoring the actual uploaded avatar files
