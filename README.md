@@ -63,18 +63,18 @@ PhimHub is designed for scalability and long-term maintainability. The frontend 
 ### System Diagram (Mermaid)
 ```mermaid
 flowchart LR
-  user[User Browser]
-  ui[React SPA\n(Vite + Tailwind + Zustand)]
-  api[Express API\n(Node.js + TypeScript)]
-  svc[Services\n(Business Logic)]
-  repo[Repositories\n(Data Access)]
+  user["User Browser"]
+  ui["React SPA (Vite, Tailwind, Zustand)"]
+  api["Express API (Node.js, TypeScript)"]
+  svc["Services (Business Logic)"]
+  repo["Repositories (Data Access)"]
   db[(SQL Server)]
   ext1[[TMDB API]]
   ext2[[PhimAPI]]
-  nginx[(Nginx\nStatic Hosting)]
+  nginx["Nginx (Static Hosting)"]
 
   user -->|HTTPS| ui
-  ui <--> |HTTP / JSON| api
+  ui <--> |HTTP/JSON| api
   ui --> nginx
   api --> svc
   svc --> repo
@@ -85,13 +85,10 @@ flowchart LR
 
 ### Clean Architecture Layers (Mermaid)
 ```mermaid
-graph TB
-  A[🎨 Presentation\nControllers, Middlewares, Routes] --> B[💼 Business\nServices, Use Cases]
-  B --> C[💾 Data Access\nRepositories, Models, Migrations]
-  C --> D[🗄️ Infrastructure\nDB Connection, External APIs, Email, File Storage]
-
-  classDef layer fill:#0b1020,stroke:#1f2937,color:#e5e7eb,stroke-width:1px;
-  class A,B,C,D layer;
+graph TD
+  Presentation["Presentation (Controllers, Middlewares, Routes)"] --> Business["Business (Services, Use Cases)"]
+  Business --> Data["Data Access (Repositories, Models, Migrations)"]
+  Data --> Infrastructure["Infrastructure (DB, External APIs, Email, File Storage)"]
 ```
 
 ---
