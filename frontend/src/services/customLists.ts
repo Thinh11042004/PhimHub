@@ -1,3 +1,5 @@
+import { http } from '../shared/lib/http';
+
 export interface CustomList {
   id: number;
   name: string;
@@ -45,139 +47,47 @@ export interface MovieInListsResponse {
   listIds: number[];
 }
 
-function getAuthHeaders() {
-  const token = localStorage.getItem('phimhub:token');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
-
 class CustomListsService {
-  private baseUrl = `${API_BASE}/custom-lists`;
+  private baseUrl = `/custom-lists`;
 
-  // Get all lists for the authenticated user
   async getUserLists(): Promise<CustomList[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/`, {
-        headers: getAuthHeaders(),
-        credentials: 'include'
-      });
-      const json = await response.json();
-      return json.data;
-    } catch (error: any) {
-      console.error('Error getting user lists:', error);
-      throw new Error('Failed to get user lists');
-    }
+    const res = await http.get(`${this.baseUrl}/`);
+    return res.data;
   }
 
-  // Get a specific list with items
   async getList(listId: number): Promise<{ list: CustomList; items: ListItem[] }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${listId}`, {
-        headers: getAuthHeaders(),
-        credentials: 'include'
-      });
-      const json = await response.json();
-      return json.data;
-    } catch (error: any) {
-      console.error('Error getting list:', error);
-      throw new Error('Failed to get list');
-    }
+    const res = await http.get(`${this.baseUrl}/${listId}`);
+    return res.data;
   }
 
-  // Create a new list
   async createList(request: CreateListRequest): Promise<CustomList> {
-    try {
-      const response = await fetch(`${this.baseUrl}/`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(request),
-        credentials: 'include'
-      });
-      const json = await response.json();
-      return json.data;
-    } catch (error: any) {
-      console.error('Error creating list:', error);
-      throw new Error('Failed to create list');
-    }
+    const res = await http.post(`${this.baseUrl}/`, request);
+    return res.data;
   }
 
-  // Update a list
   async updateList(listId: number, request: UpdateListRequest): Promise<void> {
-    try {
-      await fetch(`${this.baseUrl}/${listId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(request),
-        credentials: 'include'
-      });
-    } catch (error: any) {
-      console.error('Error updating list:', error);
-      throw new Error('Failed to update list');
-    }
+    await http.put(`${this.baseUrl}/${listId}`, request);
   }
 
-  // Delete a list
   async deleteList(listId: number): Promise<void> {
-    try {
-      await fetch(`${this.baseUrl}/${listId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-        credentials: 'include'
-      });
-    } catch (error: any) {
-      console.error('Error deleting list:', error);
-      throw new Error('Failed to delete list');
-    }
+    await http.delete(`${this.baseUrl}/${listId}`);
   }
 
-  // Add movie to list
   async addMovieToList(listId: number, request: AddMovieRequest): Promise<void> {
-    try {
-      await fetch(`${this.baseUrl}/${listId}/items`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(request),
-        credentials: 'include'
-      });
-    } catch (error: any) {
-      console.error('Error adding movie to list:', error);
-      throw new Error('Failed to add movie to list');
-    }
+    await http.post(`${this.baseUrl}/${listId}/items`, request);
   }
 
-  // Remove movie from list
   async removeMovieFromList(listId: number, request: AddMovieRequest): Promise<void> {
-    try {
-      await fetch(`${this.baseUrl}/${listId}/items`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(request),
-        credentials: 'include'
-      });
-    } catch (error: any) {
-      console.error('Error removing movie from list:', error);
-      throw new Error('Failed to remove movie from list');
-    }
+    await http.request({
+      url: `${this.baseUrl}/${listId}/items`,
+      method: 'DELETE',
+      data: request,
+    });
   }
 
-  // Check if movie is in any list
   async checkMovieInLists(movieId: string, movieType: 'movie' | 'series'): Promise<number[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/check/movie?movieId=${movieId}&movieType=${movieType}`, {
-        headers: getAuthHeaders(),
-        credentials: 'include'
-      });
-      const json = await response.json();
-      return json.data.listIds;
-    } catch (error: any) {
-      console.error('Error checking movie in lists:', error);
-      return [];
-    }
+    const res = await http.get(`${this.baseUrl}/check/movie`, { params: { movieId, movieType } });
+    return res.data.listIds;
   }
 }
 

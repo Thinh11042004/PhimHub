@@ -2,7 +2,7 @@
 import { LoginRequest, RegisterRequest, AuthResponse } from "./services";
 
 // Base API endpoints
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_BASE_URL } from '../../config';
 
 // Simple fetch wrapper
 async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

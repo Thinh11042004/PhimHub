@@ -1,6 +1,7 @@
 import { MovieDetail, MovieProvider, MovieVersion, Subtitle, EpisodeServer } from "../model";
+import { http } from '../../../shared/lib/http';
 
-const BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:3001/api";
+// Using shared Axios baseURL; call relative endpoints
 
 type BackendMovieResponse = {
   success: boolean;
@@ -170,20 +171,10 @@ function mapToMovieDetail(resp: BackendMovieResponse): MovieDetail {
 export class LocalBackendProvider implements MovieProvider {
   async getMovieById(slug: string): Promise<MovieDetail> {
     try {
-      const url = `${BASE_URL}/movies/${encodeURIComponent(slug)}`;
+      const url = `/movies/${encodeURIComponent(slug)}`;
       console.log('🎬 LocalBackend getMovieById:', { slug, url });
-      
-      const res = await fetch(url);
-      if (!res.ok) {
-        console.error('❌ Backend API error:', { status: res.status, statusText: res.statusText, url });
-        throw new Error(`Backend HTTP ${res.status}`);
-      }
-      
-      const json: BackendMovieResponse = await res.json();
-      if (!json?.success) {
-        throw new Error(json?.message || 'Lỗi backend');
-      }
-      
+      const json: BackendMovieResponse = await http.get(url);
+      if (!json?.success) throw new Error(json?.message || 'Lỗi backend');
       return mapToMovieDetail(json);
     } catch (error) {
       console.error('Error fetching movie from backend:', error);
@@ -193,28 +184,10 @@ export class LocalBackendProvider implements MovieProvider {
 
   async updateMovie(movieId: string, updateData: any): Promise<MovieDetail> {
     try {
-      const url = `${BASE_URL}/movies/${movieId}`;
+      const url = `/movies/${movieId}`;
       console.log('🎬 LocalBackend updateMovie:', { movieId, url, updateData });
-      
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(updateData)
-      });
-      
-      if (!res.ok) {
-        console.error('❌ Backend API error:', { status: res.status, statusText: res.statusText, url });
-        throw new Error(`Backend HTTP ${res.status}`);
-      }
-      
-      const json: BackendMovieResponse = await res.json();
-      if (!json?.success) {
-        throw new Error(json?.message || 'Lỗi backend');
-      }
-      
+      const json: BackendMovieResponse = await http.put(url, updateData);
+      if (!json?.success) throw new Error(json?.message || 'Lỗi backend');
       return mapToMovieDetail(json);
     } catch (error) {
       console.error('Error updating movie from backend:', error);
@@ -224,17 +197,8 @@ export class LocalBackendProvider implements MovieProvider {
 
   async switchVersion(id: string, versionKey: string) {
     try {
-      // Lấy lại dữ liệu phim để có thông tin episodes mới nhất
-      const res = await fetch(`${BASE_URL}/movies/${encodeURIComponent(id)}`);
-      if (!res.ok) {
-        throw new Error(`Backend HTTP ${res.status}`);
-      }
-      
-      const json: BackendMovieResponse = await res.json();
-      if (!json?.success) {
-        throw new Error(json?.message || 'Lỗi backend');
-      }
-      
+      const json: BackendMovieResponse = await http.get(`/movies/${encodeURIComponent(id)}`);
+      if (!json?.success) throw new Error(json?.message || 'Lỗi backend');
       const data = json.data;
       const episodes = data.episodes || [];
       

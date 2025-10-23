@@ -24,7 +24,8 @@ export class MovieRepository extends BaseRepository<Movie> {
     const namedParams: { [key: string]: any } = {};
 
     if (search) {
-      whereConditions.push('(m.title LIKE @search OR m.description LIKE @search OR m.name LIKE @search)');
+      // Search by title, original_title (if available), or description
+      whereConditions.push('(m.title LIKE @search OR m.original_title LIKE @search OR m.description LIKE @search)');
       namedParams['search'] = `%${search}%`;
     }
     if (year) {
@@ -247,7 +248,8 @@ export class MovieRepository extends BaseRepository<Movie> {
     const namedParams: { [key: string]: any } = {};
 
     if (search) {
-      whereConditions.push('(m.title LIKE @search OR m.description LIKE @search OR m.name LIKE @search)');
+      // Match the same search columns as findAll
+      whereConditions.push('(m.title LIKE @search OR m.original_title LIKE @search OR m.description LIKE @search)');
       namedParams['search'] = `%${search}%`;
     }
     if (year) {

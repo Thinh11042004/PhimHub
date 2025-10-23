@@ -15,6 +15,25 @@ declare global {
   }
 }
 
+function verifyWithPossibleSecrets(token: string): any {
+  // Support multiple secrets to avoid breaking existing tokens after config changes
+  const possibleSecrets = [
+    process.env.JWT_SECRET,
+    'phimhub-super-secret-jwt-key-2024',   
+    'your-super-secret-jwt-key-here',      
+  ].filter(Boolean) as string[];
+
+  let lastError: any = null;
+  for (const secret of possibleSecrets) {
+    try {
+      return jwt.verify(token, secret);
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('Invalid token');
+}
+
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -28,9 +47,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'phimhub-super-secret-jwt-key-2024';
-
-    const decoded = jwt.verify(token, secret) as any;
+    const decoded = verifyWithPossibleSecrets(token) as any;
     
     // Support both { id } and { userId } payloads
     const id = decoded.userId ?? decoded.id;

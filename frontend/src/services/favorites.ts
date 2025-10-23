@@ -1,6 +1,4 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
-import { getAuthToken } from '../utils/auth';
+import { http } from '../shared/lib/http';
 
 export interface FavoriteItem {
   id: string;
@@ -25,38 +23,23 @@ export interface AddFavoriteRequest {
 }
 
 class FavoritesApi {
-  private getAuthHeaders() {
-    const token = getAuthToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
   async getFavorites(): Promise<FavoriteItem[]> {
-    const response = await axios.get(`${API_BASE_URL}/favorites`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data.data.favorites;
+    const res = await http.get('/favorites');
+    return res.data.favorites;
   }
 
   async addToFavorites(data: AddFavoriteRequest): Promise<any> {
-    const response = await axios.post(`${API_BASE_URL}/favorites`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    return http.post('/favorites', data);
   }
 
   async removeFromFavorites(movieId: string, movieType: 'movie' | 'series'): Promise<any> {
-    const response = await axios.delete(`${API_BASE_URL}/favorites/${movieId}/${movieType}`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    return http.delete(`/favorites/${movieId}/${movieType}`);
   }
 
   async checkFavorite(movieId: string, movieType: 'movie' | 'series'): Promise<boolean> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/favorites/check/${movieId}/${movieType}`, {
-        headers: this.getAuthHeaders(),
-      });
-      return response.data.data.isFavorited;
+      const res = await http.get(`/favorites/check/${movieId}/${movieType}`);
+      return res.data.isFavorited;
     } catch (error) {
       console.error('Error checking favorite status:', error);
       return false;
@@ -64,17 +47,12 @@ class FavoritesApi {
   }
 
   async getFavoritesCount(): Promise<number> {
-    const response = await axios.get(`${API_BASE_URL}/favorites/count`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data.data.count;
+    const res = await http.get('/favorites/count');
+    return res.data.count;
   }
 
   async clearAllFavorites(): Promise<any> {
-    const response = await axios.delete(`${API_BASE_URL}/favorites/clear`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    return http.delete('/favorites/clear');
   }
 }
 

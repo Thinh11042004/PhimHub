@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Ensure prod build does not pick up local dev env overrides
+RUN rm -f .env .env.local .env.development .env.production || true
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runner

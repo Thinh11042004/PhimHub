@@ -8,6 +8,7 @@ import PosterCard from "../../../shared/components/PosterCard";
 import { AddToListDialog } from "../../../shared/components/AddToListDialog";
 import LoginRequiredModal from "../../../shared/components/LoginRequiredModal";
 import { useLoginRequired } from "../../../shared/hooks/useLoginRequired";
+import { http } from "../../../shared/lib/http";
 
 /* =======================
    Types
@@ -759,22 +760,21 @@ export default function Home() {
         const now = Date.now();
         const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for banners
         
-        let moviesWithBanner = [];
+        let moviesWithBanner: any[] = [];
         
         if (cachedData && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
           // Use cached data
           console.log('Home - Using cached banners data');
           moviesWithBanner = JSON.parse(cachedData);
         } else {
-          // Fetch fresh data
+          // Fetch fresh data via shared http client
           console.log('Home - Fetching fresh banners data');
-          const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:3001/api'}/movies?limit=20`);
-          const data = await response.json();
+          const data: any = await http.get('/movies', { params: { limit: 20 } }) as any;
           
-          if (data.success && data.data.movies) {
+          if (data.success && data.data?.movies) {
             moviesWithBanner = data.data.movies
               .filter((movie: any) => movie.banner_url && movie.status === 'published')
-              .slice(0, 8); // Lấy tối đa 8 phim cho banner
+              .slice(0, 8); // Take up to 8 movies for banner
             
             // Cache the data
             localStorage.setItem(cacheKey, JSON.stringify(moviesWithBanner));
@@ -792,7 +792,7 @@ export default function Home() {
                 movie.categories.split(',').map((g: string) => getGenreDisplayName(g.trim())).slice(0, 3)) : 
               (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)).slice(0, 3) : []),
             image: movie.banner_url,
-            // Thêm thông tin phim
+            // Extra movie info
             rating: movie.external_rating,
             ageRating: movie.age_rating,
             year: movie.release_year,
@@ -825,19 +825,18 @@ export default function Home() {
         const now = Date.now();
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         
-        let movies = [];
+        let movies: any[] = [];
         
         if (cachedData && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
           // Use cached data
           console.log('Home - Using cached movies data');
           movies = JSON.parse(cachedData);
         } else {
-          // Fetch fresh data
+          // Fetch fresh data via shared http client
           console.log('Home - Fetching fresh movies data');
-          const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:3001/api'}/movies?limit=50`); // Reduced from 100 to 50
-          const data = await response.json();
+          const data: any = await http.get('/movies', { params: { limit: 50 } }) as any;
           
-          if (data.success && data.data.movies) {
+          if (data.success && data.data?.movies) {
             movies = data.data.movies.filter((movie: any) => movie.status === 'published');
             
             // Cache the data
@@ -846,7 +845,6 @@ export default function Home() {
           }
         }
         
-        // Convert to Item format
         const convertToItems = (movieList: any[]): Item[] => 
           movieList.map((movie: any) => ({
             id: movie.slug,
@@ -866,7 +864,6 @@ export default function Home() {
               (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)) : []),
           }));
         
-        // Load sections with priority: Trending first, then others
         const loadSections = async () => {
           // 1. Trending (highest priority)
           const trending = movies

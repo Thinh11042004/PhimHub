@@ -27,6 +27,7 @@ services:
     depends_on:
       - sqlserver
     volumes:
+      # Map any local BACPAC to /data/db.bacpac in the container
       - ./db_moi1.bacpac:/data/db.bacpac:ro
     environment:
       - DB_HOST=sqlserver
@@ -37,6 +38,9 @@ services:
       - SLEEP_SECONDS=10
       - MAX_RETRIES=40
       - RETRY_DELAY=5
+      - DROP_EXISTING=true
+      # Optionally override if you mount a different path/name
+      - BACPAC_PATH=/data/db.bacpac
     restart: "no"
     profiles:
       - seed
@@ -52,7 +56,7 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - FRONTEND_URL=http://localhost:8080
-      - JWT_SECRET=change-me
+      - JWT_SECRET=${JWT_SECRET}
       - DB_HOST=sqlserver
       - DB_PORT=1433
       - DB_USER=sa

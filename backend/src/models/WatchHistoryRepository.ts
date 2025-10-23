@@ -37,8 +37,10 @@ export class WatchHistoryRepository extends BaseRepository<WatchHistory> {
 
   async findByUserId(userId: number): Promise<WatchHistory[]> {
     const sqlQuery = `
-      SELECT wh.*, 
-             m.title, m.slug, m.poster_url, m.is_series,
+      SELECT wh.*,
+             m.title, m.slug,
+             COALESCE(m.thumbnail_url, m.banner_url) AS poster_url,
+             m.is_series,
              e.title as episode_title, e.movie_id as episode_movie_id, e.episode_number as episode_number_from_episodes
       FROM ${this.tableName} wh
       INNER JOIN contents c ON wh.content_id = c.id

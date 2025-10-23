@@ -39,7 +39,7 @@ export class FavoritesRepository extends BaseRepository<Favorite> {
         m.duration,
         m.age_rating,
         m.thumbnail_url,
-        m.poster_url,
+        COALESCE(m.thumbnail_url, m.banner_url) AS poster_url,
         m.is_series,
         m.slug
       FROM favorites f

@@ -1,160 +1,75 @@
+import { http } from '../../shared/lib/http';
+
 export type RatingSummary = { avg: number; count: number; user?: number | null };
 
-function getAuthHeaders() {
-  const token = localStorage.getItem('phimhub:token');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
-
 export const InteractionsApi = {
-  // Favorites - Updated to use new API endpoints
   async listFavorites() {
-    const res = await fetch(`${API_BASE}/favorites`, {
-      headers: getAuthHeaders(),
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data.favorites || [];
+    const res = await http.get('/favorites');
+    return res.data.favorites || [];
   },
 
   async addFavorite(movieId: string, movieType: 'movie' | 'series' = 'movie') {
-    const res = await fetch(`${API_BASE}/favorites`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ movieId, movieType, provider: 'local' }),
-      credentials: 'include'
-    });
-    return res.json();
+    return http.post('/favorites', { movieId, movieType, provider: 'local' });
   },
 
   async removeFavorite(movieId: string, movieType: 'movie' | 'series' = 'movie') {
-    const res = await fetch(`${API_BASE}/favorites/${movieId}/${movieType}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include'
-    });
-    return res.json();
+    return http.delete(`/favorites/${movieId}/${movieType}`);
   },
 
   async checkFavorite(movieId: string, movieType: 'movie' | 'series' = 'movie') {
-    const res = await fetch(`${API_BASE}/favorites/check/${movieId}/${movieType}`, {
-      headers: getAuthHeaders(),
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data;
+    const res = await http.get(`/favorites/check/${movieId}/${movieType}`);
+    return res.data;
   },
 
-  // Ratings
   async getRating(contentId: number) {
-    const res = await fetch(`${API_BASE}/interactions/ratings/${contentId}`, {
-      headers: getAuthHeaders(),
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data as RatingSummary;
+    const res = await http.get(`/interactions/ratings/${contentId}`);
+    return res.data as RatingSummary;
   },
 
   async setRating(contentId: number, rating: number) {
-    await fetch(`${API_BASE}/interactions/ratings/${contentId}`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ rating }),
-      credentials: 'include'
-    });
+    await http.post(`/interactions/ratings/${contentId}`, { rating });
   },
 
-  // Comments
   async listComments(contentId: number, page = 1, limit = 20) {
-    const res = await fetch(`${API_BASE}/interactions/comments/${contentId}?page=${page}&limit=${limit}`, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const json = await res.json();
-    return json.data as any[];
+    const res = await http.get(`/interactions/comments/${contentId}`, { params: { page, limit } });
+    return res.data as any[];
   },
 
   async listExternalComments(provider: string, slug: string, page = 1, limit = 20) {
-    const res = await fetch(`${API_BASE}/interactions/ext-comments/${provider}/${slug}?page=${page}&limit=${limit}`);
-    const json = await res.json();
-    return json.data as any[];
+    const res = await http.get(`/interactions/ext-comments/${provider}/${slug}`, { params: { page, limit } });
+    return res.data as any[];
   },
 
   async listReplies(contentId: number, parentId: number) {
-    const res = await fetch(`${API_BASE}/interactions/comments/${contentId}/${parentId}/replies`, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const json = await res.json();
-    return json.data as any[];
+    const res = await http.get(`/interactions/comments/${contentId}/${parentId}/replies`);
+    return res.data as any[];
   },
 
   async createComment(contentId: number, content: string, parentId?: number) {
-    const res = await fetch(`${API_BASE}/interactions/comments/${contentId}`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ content, parentId }),
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data;
+    const res = await http.post(`/interactions/comments/${contentId}`, { content, parentId });
+    return res.data;
   },
 
   async createExternalComment(provider: string, slug: string, content: string, parentId?: number) {
-    const res = await fetch(`${API_BASE}/interactions/ext-comments/${provider}/${slug}`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ content, parentId }),
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data;
+    const res = await http.post(`/interactions/ext-comments/${provider}/${slug}`, { content, parentId });
+    return res.data;
   },
 
   async updateComment(commentId: number, content: string) {
-    const res = await fetch(`${API_BASE}/interactions/comments/${commentId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ content }),
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data;
+    const res = await http.put(`/interactions/comments/${commentId}`, { content });
+    return res.data;
   },
 
   async deleteComment(commentId: number) {
-    await fetch(`${API_BASE}/interactions/comments/${commentId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include'
-    });
+    await http.delete(`/interactions/comments/${commentId}`);
   },
 
   async updateExternalComment(commentId: number, content: string) {
-    const res = await fetch(`${API_BASE}/interactions/ext-comments/${commentId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ content }),
-      credentials: 'include'
-    });
-    
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`API Error ${res.status}: ${errorText}`);
-    }
-    
-    const json = await res.json();
-    return json.data;
+    const res = await http.put(`/interactions/ext-comments/${commentId}`, { content });
+    return res.data;
   },
 
   async deleteExternalComment(commentId: number) {
-    await fetch(`${API_BASE}/interactions/ext-comments/${commentId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include'
-    });
+    await http.delete(`/interactions/ext-comments/${commentId}`);
   }
 };

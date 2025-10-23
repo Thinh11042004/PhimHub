@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+import { http } from '../shared/lib/http';
 
 export interface Actor {
   id: number;
@@ -34,151 +34,67 @@ export interface ActorsResponse {
 }
 
 class ActorService {
-  private async fetchWithErrorHandling<T>(url: string, options?: RequestInit): Promise<T> {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.data || data;
-    } catch (error) {
-      console.error('ActorService error:', error);
-      throw error;
-    }
-  }
-
-  // Get all actors with pagination
   async getAllActors(page: number = 1, limit: number = 20): Promise<ActorsResponse> {
-    const url = `${API_BASE}/actors?page=${page}&limit=${limit}`;
-    return this.fetchWithErrorHandling<ActorsResponse>(url);
+    const res = await http.get(`/actors`, { params: { page, limit } });
+    return res.data;
   }
 
-  // Get actor by ID with movies
   async getActorById(id: number): Promise<ActorWithMovies> {
-    const url = `${API_BASE}/actors/${id}`;
-    return this.fetchWithErrorHandling<ActorWithMovies>(url);
+    const res = await http.get(`/actors/${id}`);
+    return res.data;
   }
 
-  // Search actors by name
   async searchActors(query: string, limit: number = 20): Promise<Actor[]> {
-    if (!query || query.trim().length < 2) {
-      return [];
-    }
-    
-    const url = `${API_BASE}/actors/search?q=${encodeURIComponent(query)}&limit=${limit}`;
-    return this.fetchWithErrorHandling<Actor[]>(url);
+    if (!query || query.trim().length < 2) return [];
+    const res = await http.get(`/actors/search`, { params: { q: query, limit } });
+    return res.data;
   }
 
-  // Get actor statistics
   async getActorStats(id: number): Promise<ActorStats> {
-    const url = `${API_BASE}/actors/${id}/stats`;
-    return this.fetchWithErrorHandling<ActorStats>(url);
+    const res = await http.get(`/actors/${id}/stats`);
+    return res.data;
   }
 
-  // Create actor (Admin only)
   async createActor(actorData: Omit<Actor, 'id' | 'created_at' | 'updated_at'>): Promise<Actor> {
-    const token = localStorage.getItem('phimhub:token');
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    const url = `${API_BASE}/actors`;
-    return this.fetchWithErrorHandling<Actor>(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(actorData),
-    });
+    const res = await http.post(`/actors`, actorData);
+    return res.data;
   }
 
-  // Update actor (Admin only)
   async updateActor(id: number, actorData: Partial<Omit<Actor, 'id' | 'created_at' | 'updated_at'>>): Promise<Actor> {
-    const token = localStorage.getItem('phimhub:token');
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    const url = `${API_BASE}/actors/${id}`;
-    return this.fetchWithErrorHandling<Actor>(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(actorData),
-    });
+    const res = await http.put(`/actors/${id}`, actorData);
+    return res.data;
   }
 
-  // Delete actor (Admin only)
   async deleteActor(id: number): Promise<void> {
-    const token = localStorage.getItem('phimhub:token');
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    const url = `${API_BASE}/actors/${id}`;
-    await this.fetchWithErrorHandling<void>(url, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    await http.delete(`/actors/${id}`);
   }
 
-  // Helper method to get actor age from date of birth
   getActorAge(dob?: string): number | null {
     if (!dob) return null;
-    
     const birthDate = new Date(dob);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
     return age;
   }
 
-  // Helper method to format date of birth
   formatDateOfBirth(dob?: string): string | null {
     if (!dob) return null;
-    
     try {
       const date = new Date(dob);
-      return date.toLocaleDateString('vi-VN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
     } catch {
       return null;
     }
   }
 
-  // Helper method to get actor's most recent movies
   getRecentMovies(actor: ActorWithMovies, limit: number = 5) {
-    return actor.movies
-      .sort((a, b) => (b.release_year || 0) - (a.release_year || 0))
-      .slice(0, limit);
+    return actor.movies.sort((a, b) => (b.release_year || 0) - (a.release_year || 0)).slice(0, limit);
   }
 
-  // Helper method to get actor's most popular movies (by release year for now)
   getPopularMovies(actor: ActorWithMovies, limit: number = 5) {
-    return actor.movies
-      .sort((a, b) => (b.release_year || 0) - (a.release_year || 0))
-      .slice(0, limit);
+    return actor.movies.sort((a, b) => (b.release_year || 0) - (a.release_year || 0)).slice(0, limit);
   }
 }
 

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+import { http } from '../shared/lib/http';
 
 export interface Director {
   id: number;
@@ -21,39 +21,19 @@ export interface DirectorMovie {
 
 class DirectorService {
   async getDirectorById(id: number): Promise<Director | null> {
-    const res = await fetch(`${API_BASE}/directors/${id}`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    const json = await res.json();
-    return json.data;
+    return http.get(`/directors/${id}`);
   }
 
   async searchDirectors(query: string, limit: number = 10): Promise<Director[]> {
-    const res = await fetch(`${API_BASE}/directors/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    const json = await res.json();
-    return json.data;
+    return http.get(`/directors/search`, { params: { q: query, limit } });
   }
 
   async getMoviesByDirector(directorId: number): Promise<DirectorMovie[]> {
-    const res = await fetch(`${API_BASE}/directors/${directorId}/movies`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    const json = await res.json();
-    return json.data;
+    return http.get(`/directors/${directorId}/movies`);
   }
 
   async getAllDirectors(page: number = 1, limit: number = 20): Promise<{ directors: Director[], total: number, page: number, limit: number }> {
-    const res = await fetch(`${API_BASE}/directors?page=${page}&limit=${limit}`);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    const json = await res.json();
-    return json.data;
+    return http.get(`/directors`, { params: { page, limit } });
   }
 }
 
