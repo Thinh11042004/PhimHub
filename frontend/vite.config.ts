@@ -11,6 +11,8 @@ export default defineConfig({
 			'@app': path.resolve(__dirname, 'src/app')
 		}
 	},
+	// Load env from repo root so we use a single .env
+	envDir: path.resolve(__dirname, '..'),
 	server: {
 		port: 5173,
 		strictPort: false,
