@@ -17,6 +17,7 @@ type Movie = {
   provider?: string;
   rating?: number;
   overview?: string;
+  isSeries?: boolean;
 };
 
 type Series = {

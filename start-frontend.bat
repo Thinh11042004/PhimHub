@@ -1,6 +1,0 @@
-@echo off
-echo Starting PhimHub Frontend...
-cd frontend
-echo Starting development server...
-npm run dev
-pause

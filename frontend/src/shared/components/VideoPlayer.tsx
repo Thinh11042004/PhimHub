@@ -97,9 +97,7 @@ export default function VideoPlayer({ src, poster, subtitles = [], startPosition
         fragLoadingRetryDelay: 1000,
         startFragPrefetch: true,
         testBandwidth: true,
-        progressive: false,
-        lowLatencyMode: false,
-        backBufferLength: 30
+        progressive: false
       });
       hls.loadSource(src);
       hls.attachMedia(video);
@@ -115,14 +113,17 @@ export default function VideoPlayer({ src, poster, subtitles = [], startPosition
         }
         if (levels && levels.length > 0) {
           // Prefer lower quality for better buffering
-          const preferredLevel = levels.find(level => level.height <= 720) || levels[0];
-          if (preferredLevel && typeof preferredLevel.level === 'number') {
-            hls.currentLevel = preferredLevel.level;
-            console.log('🎬 Auto-selected quality:', {
-              level: preferredLevel.level,
-              height: preferredLevel.height,
-              bitrate: preferredLevel.bitrate
-            });
+          const preferredLevel = levels.find((level: any) => level.height <= 720) || levels[0];
+          if (preferredLevel) {
+            const levelIndex = levels.indexOf(preferredLevel);
+            if (levelIndex >= 0) {
+              hls.currentLevel = levelIndex;
+              console.log('🎬 Auto-selected quality:', {
+                level: levelIndex,
+                height: preferredLevel.height,
+                bitrate: preferredLevel.bitrate
+              });
+            }
           } else {
             console.warn('⚠️ Invalid HLS level:', preferredLevel);
           }
@@ -132,46 +133,21 @@ export default function VideoPlayer({ src, poster, subtitles = [], startPosition
         attachSubs();
       });
 
-      // Monitor buffering and auto-downgrade quality
-      let bufferingCount = 0;
-      let lastBufferingTime = 0;
-      
-      hls.on(Hls.Events.BUFFER_STALLED, () => {
-        const now = Date.now();
-        if (now - lastBufferingTime > 5000) { // Only count if > 5 seconds apart
-          bufferingCount++;
-          lastBufferingTime = now;
-          setIsBuffering(true);
-          
-          console.log('🔄 HLS Buffering detected:', { count: bufferingCount });
-          
-          // Auto-downgrade quality after 2 buffering events
-          if (bufferingCount >= 2 && hls.levels && hls.levels.length > 1) {
-            const currentLevel = hls.currentLevel;
-            const lowerLevel = hls.levels.find(level => level.level < currentLevel);
-            
-            if (lowerLevel) {
-              hls.currentLevel = lowerLevel.level;
-              bufferingCount = 0; // Reset counter
-              console.log('⬇️ Auto-downgraded quality:', {
-                from: currentLevel,
-                to: lowerLevel.level,
-                height: lowerLevel.height
-              });
-            }
-          }
-        }
-      });
-
-      hls.on(Hls.Events.BUFFER_APPENDED, () => {
-        setIsBuffering(false);
-        console.log('✅ HLS Buffer appended - buffering resolved');
-      });
+      // Consolidated buffering handling using ERROR event
       hls.on(Hls.Events.ERROR, (_e, data) => {
         console.error("HLS error:", data);
-        
-        // Handle specific error types
-        if (data.type === 'otherError' && data.details === 'internal Exception') {
+
+        // Buffer stalled -> mark buffering and try lowering quality
+        if (data?.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
+          setIsBuffering(true);
+          if (hls && typeof hls.currentLevel === 'number' && hls.currentLevel > 0) {
+            hls.currentLevel = hls.currentLevel - 1; // lower one level
+          }
+          return;
+        }
+
+        // Handle specific non-fatal errors
+        if (data.type === 'otherError' && data.details && String(data.details).includes('Exception')) {
           console.warn('⚠️ HLS internal exception, continuing...');
           return;
         }
@@ -190,24 +166,16 @@ export default function VideoPlayer({ src, poster, subtitles = [], startPosition
         }
       });
 
-      // Handle buffering events
-      hls.on(Hls.Events.BUFFER_STALLED, () => {
-        console.warn('🎬 HLS buffer stalled - reducing quality');
-        if (hls.currentLevel > 0) {
-          hls.currentLevel = hls.currentLevel - 1;
-        }
-      });
-
       hls.on(Hls.Events.BUFFER_APPENDED, () => {
-        console.log('🎬 HLS buffer appended');
+        setIsBuffering(false);
+        console.log('✅ HLS Buffer appended - buffering resolved');
       });
 
       hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
         console.log('🎬 HLS level switched:', {
-          from: data.prevLevel,
           to: data.level,
-          height: hls.levels[data.level]?.height,
-          bitrate: hls.levels[data.level]?.bitrate
+          height: hls?.levels[data.level]?.height,
+          bitrate: hls?.levels[data.level]?.bitrate
         });
       });
     } else {

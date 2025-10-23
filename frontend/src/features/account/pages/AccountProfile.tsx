@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { useAuth } from "../../../store/auth";
 import { getAvatarUrl } from "../../../utils/avatarUtils";
 
@@ -30,7 +30,7 @@ export default function AccountProfile() {
   }, [user]);
 
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: FormEvent) => {
     e.preventDefault();
     console.log('🎯 Form submitted with data:', { email, username, fullname, phone });
     setIsUpdating(true);
@@ -94,7 +94,7 @@ export default function AccountProfile() {
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
     setMessage("");
@@ -125,7 +125,7 @@ export default function AccountProfile() {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 

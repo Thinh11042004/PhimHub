@@ -29,6 +29,8 @@ export type EpisodeServer = {
   server_data: Episode[];
 };
 
+export type Movie = MovieDetail;
+
 export type MovieDetail = {
   id: string;
   title: string;

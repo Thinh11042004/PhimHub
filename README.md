@@ -300,26 +300,30 @@ phimhub/
 
 ## ⚡ Quick Start
 
-Prerequisites
-- Node.js ≥ 18
-- Docker & Docker Compose
-- SQL Server (local or Docker)
+### 🐳 Docker Setup (Recommended)
 
-Method 1 — Docker (recommended)
+**Quick Start:**
+```powershell
+# Automated setup (Windows)
+.\setup-docker.ps1
 
-```bash
-# From repo root
+# Or manually
 docker compose up -d
-# Frontend: http://localhost:8080
-# Backend:  http://localhost:3001
 ```
 
-Method 2 — Manual
+See **[Docker Setup Guide](DOCKER_SETUP.md)** for details.
+
+### Manual Development Setup
+
+Prerequisites
+- Node.js ≥ 18
+- SQL Server (local or Docker)
 
 ```bash
 # Backend
 cd backend && npm install
-cp env.example .env
+cp .env.example .env
+# Edit .env with your configuration
 npm run migrate
 npm run dev
 
@@ -327,6 +331,11 @@ npm run dev
 cd frontend && npm install
 npm run dev
 ```
+
+**Services:**
+- Frontend: http://localhost:5173 (dev) / http://localhost:8080 (Docker)
+- Backend: http://localhost:3001
+- Database: SQL Server on localhost:1433
 
 ---
 

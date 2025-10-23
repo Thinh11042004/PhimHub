@@ -1,7 +1,10 @@
 import sql from 'mssql';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
+// Fallback to project root .env when running inside backend folder
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 const config: sql.config = {
   server: process.env.DB_HOST || process.env.DB_SERVER || 'localhost',

@@ -45,12 +45,16 @@ export interface MovieInListsResponse {
   listIds: number[];
 }
 
-function getAuthHeader() {
+function getAuthHeaders() {
   const token = localStorage.getItem('phimhub:token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 class CustomListsService {
   private baseUrl = `${API_BASE}/custom-lists`;
@@ -59,7 +63,7 @@ class CustomListsService {
   async getUserLists(): Promise<CustomList[]> {
     try {
       const response = await fetch(`${this.baseUrl}/`, {
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       const json = await response.json();
@@ -74,7 +78,7 @@ class CustomListsService {
   async getList(listId: number): Promise<{ list: CustomList; items: ListItem[] }> {
     try {
       const response = await fetch(`${this.baseUrl}/${listId}`, {
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       const json = await response.json();
@@ -90,7 +94,7 @@ class CustomListsService {
     try {
       const response = await fetch(`${this.baseUrl}/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         body: JSON.stringify(request),
         credentials: 'include'
       });
@@ -107,7 +111,7 @@ class CustomListsService {
     try {
       await fetch(`${this.baseUrl}/${listId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         body: JSON.stringify(request),
         credentials: 'include'
       });
@@ -122,7 +126,7 @@ class CustomListsService {
     try {
       await fetch(`${this.baseUrl}/${listId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
     } catch (error: any) {
@@ -136,7 +140,7 @@ class CustomListsService {
     try {
       await fetch(`${this.baseUrl}/${listId}/items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         body: JSON.stringify(request),
         credentials: 'include'
       });
@@ -151,7 +155,7 @@ class CustomListsService {
     try {
       await fetch(`${this.baseUrl}/${listId}/items`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         body: JSON.stringify(request),
         credentials: 'include'
       });
@@ -165,7 +169,7 @@ class CustomListsService {
   async checkMovieInLists(movieId: string, movieType: 'movie' | 'series'): Promise<number[]> {
     try {
       const response = await fetch(`${this.baseUrl}/check/movie?movieId=${movieId}&movieType=${movieType}`, {
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       const json = await response.json();

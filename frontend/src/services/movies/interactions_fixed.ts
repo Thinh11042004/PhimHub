@@ -9,7 +9,7 @@ function getAuthHeaders() {
   return headers;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 
 export const InteractionsApi = {
   // Favorites - Updated to use new API endpoints
@@ -134,6 +134,9 @@ export const InteractionsApi = {
   },
 
   async updateExternalComment(commentId: number, content: string) {
+    console.log(`🔄 Updating external comment ${commentId} with content: "${content}"`);
+    console.log(`🔗 API URL: ${API_BASE}/interactions/ext-comments/${commentId}`);
+    
     const res = await fetch(`${API_BASE}/interactions/ext-comments/${commentId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -141,12 +144,17 @@ export const InteractionsApi = {
       credentials: 'include'
     });
     
+    console.log(`📊 Response status: ${res.status}`);
+    console.log(`📊 Response headers:`, Object.fromEntries(res.headers.entries()));
+    
     if (!res.ok) {
       const errorText = await res.text();
+      console.error(`❌ API Error ${res.status}:`, errorText);
       throw new Error(`API Error ${res.status}: ${errorText}`);
     }
     
     const json = await res.json();
+    console.log(`✅ Update successful:`, json);
     return json.data;
   },
 

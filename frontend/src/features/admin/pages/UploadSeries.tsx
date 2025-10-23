@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray, Controller, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -41,7 +41,7 @@ const SeasonSchema = z.object({
 
 const SeriesSchema = z.object({
   title: z.string().min(1, "Nhập tên phim"),
-  originalTitle: z.string().optional().default(""),
+  originalTitle: z.string().default(""),
   year: z.string().min(1, "Chọn năm"),
   country: z.string().min(1, "Chọn quốc gia"),
   language: z.string().min(1, "Nhập ngôn ngữ"),
@@ -54,7 +54,7 @@ const SeriesSchema = z.object({
   seasons: z.array(SeasonSchema).min(1, "Thêm ít nhất 1 mùa"),
 });
 
-type SeriesForm = z.infer<typeof SeriesSchema>;
+type SeriesFormInput = z.input<typeof SeriesSchema>;
 
 /* ========================
    Small helpers
@@ -99,7 +99,7 @@ export default function UploadSeriesPage() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<SeriesForm>({
+  } = useForm<SeriesFormInput>({
     resolver: zodResolver(SeriesSchema),
     defaultValues: {
       title: "",
@@ -142,7 +142,7 @@ export default function UploadSeriesPage() {
     });
   };
 
-  const onSubmit = (data: SeriesForm) => {
+  const onSubmit: SubmitHandler<SeriesFormInput> = (data) => {
     // Chuẩn bị payload để gọi API (multipart nếu có file)
     // Ở đây demo log ra:
     const payload = {

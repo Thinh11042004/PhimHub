@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { actorService, ActorWithMovies } from '../../../services/actors';
-import { Movie } from '../../../services/movies/model';
+import { MovieDetail } from '../../../services/movies/model';
 import PosterCard from '../../../shared/components/PosterCard';
 import { useAuth } from '../../../store/auth';
 

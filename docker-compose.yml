@@ -11,7 +11,14 @@ services:
     volumes:
       - sqlserver_data:/var/opt/mssql
     restart: unless-stopped
-
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/1433' || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 20s
+      timeout: 3s
+  # Optional database seeding service
+  # Only runs if you have db_moi1.bacpac file and use --profile seed
   db-seed:
     build:
       context: ./seed
@@ -31,6 +38,8 @@ services:
       - MAX_RETRIES=40
       - RETRY_DELAY=5
     restart: "no"
+    profiles:
+      - seed
 
   backend:
     build:
@@ -38,7 +47,7 @@ services:
       dockerfile: Dockerfile
     container_name: phimhub-backend
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -53,11 +62,10 @@ services:
       - DB_TRUST_SERVER_CERT=true
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/dist:/app/dist
     depends_on:
       sqlserver:
-        condition: service_started
-      db-seed:
-        condition: service_completed_successfully
+        condition: service_healthy
     ports:
       - "3001:3001"
     restart: unless-stopped

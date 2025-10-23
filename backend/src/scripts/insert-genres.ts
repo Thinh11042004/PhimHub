@@ -4,6 +4,8 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 dotenv.config();
+// Fallback to project root .env when running inside backend folder
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 const config: sql.config = {
   server: process.env.DB_HOST || process.env.DB_SERVER || 'localhost',

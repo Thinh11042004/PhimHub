@@ -1,23 +1,25 @@
 import sql from 'mssql';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
+// Also try loading project root .env (when running from backend folder)
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
-const config: sql.config = {
+const baseConfig: sql.config = {
   server: process.env.DB_HOST || process.env.DB_SERVER || 'localhost',
-  database: process.env.DB_NAME || 'PhimHubE',
-  // Force Windows Authentication by not setting user/password
+  // Do not hard-require database here; we will ensure and connect later
+  // database: process.env.DB_NAME || 'PhimHubE',
   user: process.env.DB_USER || undefined,
   password: process.env.DB_PASS || process.env.DB_PASSWORD || undefined,
   port: parseInt(process.env.DB_PORT || '1433'),
   options: {
-    encrypt: process.env.DB_ENCRYPT === 'true', // Use true for Azure SQL
-    trustServerCertificate: process.env.DB_TRUST_SERVER_CERT === 'true' || process.env.DB_TRUST_CERT === 'true', // Use true for local development
+    encrypt: process.env.DB_ENCRYPT === 'true',
+    trustServerCertificate: process.env.DB_TRUST_SERVER_CERT === 'true' || process.env.DB_TRUST_CERT === 'true',
     enableArithAbort: true,
     connectTimeout: 30000,
     requestTimeout: 30000,
-    instanceName: process.env.DB_INSTANCE || undefined, // For named instances
-    // Use UTC for consistent timezone handling
+    instanceName: process.env.DB_INSTANCE || undefined,
     useUTC: true
   },
   pool: {
@@ -45,12 +47,32 @@ class Database {
     return Database.instance;
   }
 
+  private async ensureDatabaseExists(dbName: string): Promise<void> {
+    // Connect without specifying a database (defaults to master)
+    const tempPool = new sql.ConnectionPool({ ...baseConfig });
+    await tempPool.connect();
+    try {
+      const dbNameEscapedForLike = dbName.replace(/'/g, "''");
+      const dbNameEscapedForBracket = dbName.replace(/]/g, ']]');
+      await tempPool.request().query(
+        `IF DB_ID(N'${dbNameEscapedForLike}') IS NULL BEGIN EXEC('CREATE DATABASE [${dbNameEscapedForBracket}]'); END`
+      );
+    } finally {
+      await tempPool.close();
+    }
+  }
+
   public async connect(): Promise<void> {
     try {
       if (!this.pool) {
-        this.pool = new sql.ConnectionPool(config);
+        const targetDb = process.env.DB_NAME || 'PhimHub';
+        // Ensure the target database exists to prevent ELOGIN
+        await this.ensureDatabaseExists(targetDb);
+
+        const dbConfig: sql.config = { ...baseConfig, database: targetDb };
+        this.pool = new sql.ConnectionPool(dbConfig);
         await this.pool.connect();
-        console.log('✅ Connected to SQL Server database');
+        console.log(`✅ Connected to SQL Server database: ${targetDb}`);
       }
     } catch (error) {
       console.error('❌ Database connection failed:', error);

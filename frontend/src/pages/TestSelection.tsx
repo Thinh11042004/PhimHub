@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SelectionModal } from '../features/admin/components/SelectionModal';
 
-export const TestSelection: React.FC = () => {
+const TestSelection: React.FC = () => {
   const [showActorModal, setShowActorModal] = useState(false);
   const [showDirectorModal, setShowDirectorModal] = useState(false);
   const [selectedActors, setSelectedActors] = useState<string[]>([]);
@@ -84,3 +84,5 @@ export const TestSelection: React.FC = () => {
     </div>
   );
 };
+
+export default TestSelection;

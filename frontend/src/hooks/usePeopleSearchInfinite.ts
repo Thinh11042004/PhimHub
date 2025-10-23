@@ -5,6 +5,8 @@ export interface Person {
   name: string; 
   avatar: string | null; 
   nationality?: string | null; 
+  dob?: string | null;
+  photo_url?: string | null;
 }
 
 type Role = 'actor' | 'director';
@@ -50,7 +52,7 @@ export function usePeopleSearchInfinite({ open, role, query, pageSize = 50 }: Op
       url.searchParams.set('offset', String(offset));
 
       const headers: HeadersInit = { Accept: 'application/json' };
-      const token = localStorage.getItem('token'); 
+      const token = localStorage.getItem('phimhub:token'); 
       if (token) headers.Authorization = `Bearer ${token}`;
 
       const response = await fetch(url.toString(), { 
@@ -69,7 +71,9 @@ export function usePeopleSearchInfinite({ open, role, query, pageSize = 50 }: Op
             id: a.id, 
             name: a.name, 
             avatar: a.photo_url ?? null,
-            nationality: a.nationality ?? null
+            nationality: a.nationality ?? null,
+            dob: a.dob ?? null,
+            photo_url: a.photo_url ?? null
           })) : [];
 
       const newTotal = Number.isFinite(data?.total) ? data.total : newItems.length;

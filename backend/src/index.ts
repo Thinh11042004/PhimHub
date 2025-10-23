@@ -29,6 +29,8 @@ import Migrator from './db/migrator';
 
 // Load environment variables
 dotenv.config();
+// Fallback to root .env when running inside backend folder
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 // Note: Removed process.env.TZ to avoid timezone conflicts with UTC handling
 // Backend now uses UTC consistently, frontend handles Vietnam timezone display

@@ -4,8 +4,9 @@ import { useAuth } from "../../store/auth";
 import { useUI } from "../../store/ui";
 import { MovieService } from "../../services/movies";
 import { getAvatarUrlWithFallback } from "../../utils/avatarUtils";
-import defaultAvatar from "../../assets/avatar.jpg";
-import logo from "../../assets/phimhub-logo-dark.png";
+import logo from "../../assets/branding/phimhub-logo-light.png";
+
+const DEFAULT_AVATAR_FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="100%" height="100%" fill="%23ddd"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23666" font-family="sans-serif" font-size="24">User</text></svg>';
 
 function NavItem({ to, children, isScrolled }: { to: string; children: React.ReactNode; isScrolled: boolean }) {
   return (
@@ -37,7 +38,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<number | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, logout, refreshUser } = useAuth();
   const { openAuth } = useUI();
 
@@ -356,9 +357,9 @@ export default function Navbar() {
               }`}
             >
               <img
-                src={getAvatarUrlWithFallback(user.avatar, defaultAvatar)}
+                src={getAvatarUrlWithFallback(user.avatar, DEFAULT_AVATAR_FALLBACK)}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = defaultAvatar;
+                  (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR_FALLBACK;
                 }}
                 alt={user.username || "avatar"}
                 className="h-full w-full object-cover"

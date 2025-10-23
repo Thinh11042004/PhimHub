@@ -67,7 +67,7 @@ function pickStream(d: any): { hls?: string; mp4?: string } {
 }
 
 function mapToMovieDetail(resp: PhimApiResponse): MovieDetail {
-  const m = resp.movie || {};
+  const m: PhimApiResponse["movie"] = resp.movie;
 
   // Xây dựng các phiên bản từ servers với phát hiện chất lượng tốt hơn
   const versions: MovieVersion[] = (resp.episodes || []).map((s) => {
