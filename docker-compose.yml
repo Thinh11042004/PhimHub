@@ -27,7 +27,7 @@ services:
     depends_on:
       - sqlserver
     volumes:
-      - ../db_moi1.bacpac:/data/db.bacpac:ro
+      - ./db_moi1.bacpac:/data/db.bacpac:ro
     environment:
       - DB_HOST=sqlserver
       - DB_PORT=1433
@@ -62,7 +62,6 @@ services:
       - DB_TRUST_SERVER_CERT=true
     volumes:
       - ./backend/uploads:/app/uploads
-      - ./backend/dist:/app/dist
     depends_on:
       sqlserver:
         condition: service_healthy

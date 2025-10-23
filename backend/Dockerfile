@@ -14,10 +14,9 @@ COPY package*.json ./
 RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
+COPY scripts ./scripts
 # Use local tsc to avoid network
 RUN ./node_modules/.bin/tsc --version && npm run build
-# Copy SQL migrations alongside compiled code
-COPY src/migrations ./dist/migrations
 
 FROM base AS runner
 ENV NODE_ENV=production
