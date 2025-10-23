@@ -17,15 +17,15 @@ services:
       retries: 10
       start_period: 20s
       timeout: 3s
-  # Optional database seeding service
-  # Only runs if you have db_moi1.bacpac file and use --profile seed
+  # Database seeding service (runs once automatically and exits)
   db-seed:
     build:
       context: ./seed
       dockerfile: Dockerfile
     container_name: phimhub-db-seed
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
     volumes:
       # Map any local BACPAC to /data/db.bacpac in the container
       - ./db_moi1.bacpac:/data/db.bacpac:ro
@@ -42,8 +42,7 @@ services:
       # Optionally override if you mount a different path/name
       - BACPAC_PATH=/data/db.bacpac
     restart: "no"
-    profiles:
-      - seed
+    # No profile -> included in default `docker compose up`
 
   backend:
     build:
@@ -69,6 +68,8 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
     ports:
       - "3001:3001"
     restart: unless-stopped
