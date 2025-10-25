@@ -1,0 +1,1 @@
+// AdminTable component
