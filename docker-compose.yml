@@ -38,6 +38,7 @@ services:
       - DB_ENCRYPT=true
       - DB_TRUST_SERVER_CERT=true
       - FORCE_NPM_INSTALL=false
+      - AUTO_IMPORT=true
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
@@ -46,7 +47,6 @@ services:
     ports:
       - "3001:3001"
     restart: unless-stopped
-    command: ["sh", "-c", "node scripts/wait-for.mjs sqlserver:1433 --timeout 120 && node dist/index.js"]
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\" || exit 1"]
       interval: 10s

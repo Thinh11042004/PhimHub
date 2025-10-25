@@ -28,7 +28,9 @@ COPY --from=build /app/dist ./dist
 COPY uploads ./uploads
 COPY scripts ./scripts
 # copy entrypoint and make executable
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 3001
 
-CMD ["node", "dist/index.js"]
+CMD ["./docker-entrypoint.sh"]

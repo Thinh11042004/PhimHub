@@ -21,5 +21,12 @@ if [ ! -d ./node_modules ] || [ ! -d ./node_modules/.bin ]; then
   fi
 fi
 
+# Run auto-import in background if enabled
+if [ "${AUTO_IMPORT}" = "true" ]; then
+  echo "🚀 Auto-import enabled, starting background import process..."
+  chmod +x scripts/auto-import.sh
+  scripts/auto-import.sh &
+fi
+
 # Start the app
 exec "$@"
