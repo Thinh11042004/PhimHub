@@ -4,7 +4,7 @@ services:
     container_name: phimhub-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=password123
+      - SA_PASSWORD=PhimHub123!
       - MSSQL_PID=Express
     ports:
       - "1433:1433"
@@ -33,11 +33,11 @@ services:
       - DB_HOST=sqlserver
       - DB_PORT=1433
       - DB_USER=sa
-      - DB_PASS=password123
+      - DB_PASS=PhimHub123!
       - DB_NAME=PhimHub
       - DB_ENCRYPT=true
       - DB_TRUST_SERVER_CERT=true
-      - FORCE_NPM_INSTALL=true
+      - FORCE_NPM_INSTALL=false
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
