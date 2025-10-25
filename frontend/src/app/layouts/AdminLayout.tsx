@@ -13,6 +13,7 @@ export default function AdminLayout() {
     if (pathname.startsWith("/admin/users")) return "Quản lý người dùng";
     if (pathname.startsWith("/admin/upload-movie")) return "Upload phim lẻ";
     if (pathname.startsWith("/admin/upload-series")) return "Upload phim bộ";
+    if (pathname.startsWith("/admin/jobs")) return "Jobs & Media";
     return "Bảng điều khiển";
   }, [pathname]);
 
@@ -37,6 +38,9 @@ export default function AdminLayout() {
           <SectionLabel>Tải lên</SectionLabel>
           <NavItem to="/admin/upload-movie" icon={<IconUpload />}>Upload phim lẻ</NavItem>
           <NavItem to="/admin/upload-series" icon={<IconUpload />}>Upload phim bộ</NavItem>
+
+          <SectionLabel>Jobs</SectionLabel>
+          <NavItem to="/admin/jobs" icon={<IconDashboard />}>Jobs & Media</NavItem>
         </nav>
       </aside>
 

@@ -49,7 +49,13 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   hydrate: () => {
     const raw = localStorage.getItem("phimhub:user");
-    if (!raw) return;
+    const token = localStorage.getItem("phimhub:token");
+    if (!raw || !token) {
+      // Invalidate stale user without token
+      localStorage.removeItem("phimhub:user");
+      if (!token) localStorage.removeItem("phimhub:token");
+      return;
+    }
     try {
       const parsed = JSON.parse(raw) as User;
       set({ user: parsed });

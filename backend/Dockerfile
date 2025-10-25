@@ -21,9 +21,15 @@ RUN ./node_modules/.bin/tsc --version && npm run build
 FROM base AS runner
 ENV NODE_ENV=production
 WORKDIR /app
+# ensure package manifests exist for entrypoint npm install fallback
+COPY package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY uploads ./uploads
 COPY scripts ./scripts
+# copy entrypoint and make executable
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 EXPOSE 3001
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

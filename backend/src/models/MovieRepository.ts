@@ -335,8 +335,6 @@ export class MovieRepository extends BaseRepository<Movie> {
     return result.recordset;
   }
 
-
-
   /**
    * Create movie from external API data
    */
@@ -548,6 +546,21 @@ export class MovieRepository extends BaseRepository<Movie> {
     return result.recordset[0];
   }
 
+  /**
+   * Set remote image URLs for a movie to preserve original sources.
+   */
+  async setRemoteImageUrls(movieId: number, remoteThumb?: string | null, remoteBanner?: string | null, transaction?: any): Promise<void> {
+    const fields: string[] = [];
+    const params: any[] = [];
+    let idx = 0;
+    if (remoteThumb !== undefined) { fields.push(`remote_thumbnail_url = @param${idx++}`); params.push(remoteThumb || null); }
+    if (remoteBanner !== undefined) { fields.push(`remote_banner_url = @param${idx++}`); params.push(remoteBanner || null); }
+    if (!fields.length) return;
+    params.push(movieId);
+    const sqlQuery = `UPDATE ${this.tableName} SET ${fields.join(', ')}, updated_at = GETUTCDATE() WHERE id = @param${idx}`;
+    await this.executeQuery(sqlQuery, params, transaction);
+  }
+
   protected mapRecordToEntity(record: any): Movie {
     return {
       id: record.id,
@@ -560,6 +573,11 @@ export class MovieRepository extends BaseRepository<Movie> {
       thumbnail_url: record.thumbnail_url,
       poster_url: record.poster_url, // Add missing poster_url mapping
       trailer_url: record.trailer_url,
+      // New media fields
+      remote_thumbnail_url: record.remote_thumbnail_url,
+      remote_banner_url: record.remote_banner_url,
+      local_thumbnail_path: record.local_thumbnail_path,
+      local_banner_path: record.local_banner_path,
       is_series: record.is_series,
       view_count: record.view_count,
       created_at: record.created_at,

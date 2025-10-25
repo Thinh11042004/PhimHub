@@ -32,6 +32,11 @@ export interface Movie {
   thumbnail_url?: string;
   poster_url?: string; // Add missing poster_url field
   trailer_url?: string;
+  // Local media fields
+  remote_thumbnail_url?: string;
+  remote_banner_url?: string;
+  local_thumbnail_path?: string;
+  local_banner_path?: string;
   is_series: boolean;
   view_count: number;
   created_at: Date;
@@ -68,6 +73,12 @@ export interface Episode {
   title?: string;
   duration?: number;
   episode_url?: string;
+  // Local media fields for HLS
+  source_url?: string;
+  local_hls_path?: string;
+  download_status?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  last_download_error?: string;
+  last_download_at?: Date;
   created_at: Date;
 }
 
@@ -176,6 +187,38 @@ export interface Notification {
   content_id?: number;
   is_read: boolean;
   created_at: Date;
+}
+
+// Optional entities for new tables
+export interface JobRun {
+  id: number;
+  job_name: string;
+  status: 'running' | 'success' | 'failed';
+  started_at: Date;
+  finished_at?: Date;
+  payload?: string;
+  result?: string;
+  error?: string;
+}
+
+export interface MediaDownload {
+  id: number;
+  kind: 'image' | 'hls';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  priority: number;
+  attempt_count: number;
+  movie_id?: number;
+  episode_id?: number;
+  source_url: string;
+  target_path?: string;
+  checksum?: string;
+  bytes_total?: number;
+  bytes_downloaded?: number;
+  last_error?: string;
+  created_at: Date;
+  updated_at?: Date;
+  started_at?: Date;
+  finished_at?: Date;
 }
 
 // Extended interfaces with relationships
@@ -302,6 +345,8 @@ export interface CreateEpisodeRequest {
   title?: string;
   duration?: number;
   episode_url?: string;
+  // New optional fields
+  source_url?: string;
 }
 
 export interface CreateRatingRequest {

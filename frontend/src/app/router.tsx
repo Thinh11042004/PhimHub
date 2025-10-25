@@ -38,6 +38,7 @@ const UsersManage = lazy(() => import("@features/admin/pages/UsersManage"));
 const CommentsManage = lazy(() => import("@features/admin/pages/CommentsManage"));
 const UploadMovie = lazy(() => import("@features/admin/pages/UploadMovie"));
 const UploadSeries = lazy(() => import("@features/admin/pages/UploadSeries"));
+const JobsMonitor = lazy(() => import("@features/admin/pages/JobsMonitor"));
 
 const NotFound = lazy(() => import("../pages/NotFound"));
 
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
               { path: "users", element: <UsersManage /> },
               { path: "upload-movie", element: <UploadMovie /> },
               { path: "upload-series", element: <UploadSeries /> },
+              { path: "jobs", element: <JobsMonitor /> },
             ],
           },
         ],

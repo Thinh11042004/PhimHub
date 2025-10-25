@@ -4,7 +4,7 @@ services:
     container_name: phimhub-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=PhimHub123!
+      - SA_PASSWORD=password123
       - MSSQL_PID=Express
     ports:
       - "1433:1433"
@@ -17,32 +17,6 @@ services:
       retries: 10
       start_period: 20s
       timeout: 3s
-  # Database seeding service (runs once automatically and exits)
-  db-seed:
-    build:
-      context: ./seed
-      dockerfile: Dockerfile
-    container_name: phimhub-db-seed
-    depends_on:
-      sqlserver:
-        condition: service_healthy
-    volumes:
-      # Map any local BACPAC to /data/db.bacpac in the container
-      - ./db_moi1.bacpac:/data/db.bacpac:ro
-    environment:
-      - DB_HOST=sqlserver
-      - DB_PORT=1433
-      - DB_USER=sa
-      - DB_PASS=PhimHub123!
-      - DB_NAME=PhimHub
-      - SLEEP_SECONDS=10
-      - MAX_RETRIES=40
-      - RETRY_DELAY=5
-      - DROP_EXISTING=true
-      # Optionally override if you mount a different path/name
-      - BACPAC_PATH=/data/db.bacpac
-    restart: "no"
-    # No profile -> included in default `docker compose up`
 
   backend:
     build:
@@ -59,21 +33,26 @@ services:
       - DB_HOST=sqlserver
       - DB_PORT=1433
       - DB_USER=sa
-      - DB_PASS=PhimHub123!
+      - DB_PASS=password123
       - DB_NAME=PhimHub
       - DB_ENCRYPT=true
       - DB_TRUST_SERVER_CERT=true
+      - FORCE_NPM_INSTALL=true
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
       sqlserver:
         condition: service_healthy
-      db-seed:
-        condition: service_completed_successfully
     ports:
       - "3001:3001"
     restart: unless-stopped
     command: ["sh", "-c", "node scripts/wait-for.mjs sqlserver:1433 --timeout 120 && node dist/index.js"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/3001' || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 20s
+      timeout: 3s
 
   frontend:
     build:
@@ -81,7 +60,8 @@ services:
       dockerfile: Dockerfile
     container_name: phimhub-frontend
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8080:80"
     restart: unless-stopped

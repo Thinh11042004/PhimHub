@@ -38,9 +38,9 @@ export class EpisodeRepository extends BaseRepository<Episode> {
   async create(episodeData: CreateEpisodeRequest, transaction?: any): Promise<Episode> {
     const sqlQuery = `
       INSERT INTO ${this.tableName} 
-      (movie_id, season_id, episode_number, title, duration, episode_url, created_at)
+      (movie_id, season_id, episode_number, title, duration, episode_url, source_url, created_at)
       OUTPUT INSERTED.*
-      VALUES (@movie_id, @season_id, @episode_number, @title, @duration, @episode_url, GETUTCDATE())
+      VALUES (@movie_id, @season_id, @episode_number, @title, @duration, @episode_url, @source_url, GETUTCDATE())
     `;
 
     const result = await this.executeQueryWithNamedParams(sqlQuery, {
@@ -49,7 +49,8 @@ export class EpisodeRepository extends BaseRepository<Episode> {
       episode_number: episodeData.episode_number,
       title: episodeData.title || null,
       duration: episodeData.duration || null,
-      episode_url: episodeData.episode_url || null
+      episode_url: episodeData.episode_url || null,
+      source_url: (episodeData as any).source_url || episodeData.episode_url || null
     }, transaction);
 
     return this.mapRecordToEntity(result.recordset[0]);
@@ -120,6 +121,12 @@ export class EpisodeRepository extends BaseRepository<Episode> {
       title: record.title,
       duration: record.duration,
       episode_url: record.episode_url,
+      // New optional fields (may be null if migration not applied yet)
+      source_url: record.source_url,
+      local_hls_path: record.local_hls_path,
+      download_status: record.download_status,
+      last_download_error: record.last_download_error,
+      last_download_at: record.last_download_at,
       created_at: record.created_at
     };
   }

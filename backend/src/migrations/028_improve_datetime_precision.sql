@@ -11,6 +11,7 @@ ELSE
 BEGIN
     PRINT 'Column comments.created_at not found or already updated';
 END
+GO
 
 -- Update external_comments table to use DATETIME2(3) for better precision
 IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.external_comments') AND name = 'created_at')
@@ -22,6 +23,7 @@ ELSE
 BEGIN
     PRINT 'Column external_comments.created_at not found or already updated';
 END
+GO
 
 IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.external_comments') AND name = 'updated_at')
 BEGIN
@@ -32,6 +34,7 @@ ELSE
 BEGIN
     PRINT 'Column external_comments.updated_at not found or already updated';
 END
+GO
 
 -- Create trigger for external_comments updated_at if it doesn't exist
 IF NOT EXISTS (SELECT * FROM sys.triggers WHERE name = 'trg_external_comments_touch')
@@ -55,5 +58,7 @@ ELSE
 BEGIN
     PRINT 'Trigger trg_external_comments_touch already exists';
 END
+GO
 
 PRINT 'Migration 028 completed: Improved datetime precision for timezone handling';
+GO

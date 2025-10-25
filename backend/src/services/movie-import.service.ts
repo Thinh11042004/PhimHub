@@ -4,6 +4,8 @@ import { GenreRepository } from '../models/GenreRepository';
 import { EpisodeRepository } from '../models/EpisodeRepository';
 import { MovieRepository } from '../models/MovieRepository';
 import Database from '../config/database';
+import { DownloadQueueService } from './download-queue.service';
+import { MediaService } from './media.service';
 
 export interface ImportOptions {
   auto_create_actors: boolean;
@@ -61,6 +63,8 @@ export class MovieImportService {
   private actorRepo = new ActorRepository();
   private genreRepo = new GenreRepository();
   private episodeRepo = new EpisodeRepository();
+  private downloader = new DownloadQueueService();
+  private media = new MediaService();
 
   /**
    * Import movie from external data
@@ -81,6 +85,11 @@ export class MovieImportService {
       // 4. Create movie
       const movie = await this.movieRepo.createFromExternal(transformedData, transaction);
       
+      // Save remote image urls for future reference
+      try {
+        await this.movieRepo.setRemoteImageUrls(movie.id, transformedData.thumbnail_url || null, transformedData.banner_url || null, transaction);
+      } catch {}
+      
       // 5. Link relationships
       if (actorIds.length > 0) {
         await this.linkMovieActors(movie.id, actorIds, transaction);
@@ -98,6 +107,9 @@ export class MovieImportService {
       }
       
       await transaction.commit();
+      
+      // Queue media downloads after commit (non-blocking)
+      await this.queueMediaForMovie(movie.id, transformedData);
       
       // Return movie with details
       return await MovieService.findById(movie.id);
@@ -157,12 +169,50 @@ export class MovieImportService {
       }
 
       await transaction.commit();
+
+      // Queue media downloads after commit (non-blocking)
+      await this.queueMediaForMovie(movieId, transformedData);
       
       // Return updated movie with details
       return await MovieService.findById(movieId);
     } catch (error) {
       await transaction.rollback();
       throw error;
+    }
+  }
+
+  private async queueMediaForMovie(movieId: number, data: TransformedMovieData) {
+    try {
+      // Determine image URLs
+      const thumbUrl = data.thumbnail_url || data.banner_url || null;
+      const bannerUrl = data.banner_url || null;
+
+      // Slug required to generate deterministic paths
+      const slug = data.slug;
+      if (thumbUrl) {
+        const ext = (thumbUrl.match(/\.(jpg|jpeg|png|webp)/i)?.[1] || 'jpg').toLowerCase();
+        const rel = this.media.getLocalImagePath(slug, 'thumb', ext);
+        await this.downloader.enqueueImage(movieId, thumbUrl, rel);
+      }
+      if (bannerUrl) {
+        const ext = (bannerUrl.match(/\.(jpg|jpeg|png|webp)/i)?.[1] || 'jpg').toLowerCase();
+        const rel = this.media.getLocalImagePath(slug, 'banner', ext);
+        await this.downloader.enqueueImage(movieId, bannerUrl, rel);
+      }
+
+      // Enqueue HLS for each episode that has m3u8
+      for (const ep of data.episodes || []) {
+        const url = ep.episode_url || '';
+        if (!url || !url.includes('.m3u8')) continue;
+        // We need episode id to link job; fetch by movie and ep number
+        const existing = await this.episodeRepo.findByMovieIdAndEpisodeNumber(movieId, ep.episode_number);
+        if (existing) {
+          const relDir = this.media.getLocalHlsDir(slug, ep.episode_number);
+          await this.downloader.enqueueHls(existing.id, url, relDir);
+        }
+      }
+    } catch (e) {
+      console.warn('queueMediaForMovie failed:', (e as any)?.message || e);
     }
   }
 
@@ -269,7 +319,9 @@ export class MovieImportService {
           movie_id: movieId,
           episode_number: episodeData.episode_number,
           title: episodeData.title,
-          episode_url: episodeData.episode_url
+          episode_url: episodeData.episode_url,
+          // Preserve original source url separately for downloader
+          source_url: episodeData.episode_url
         }, transaction);
       } catch (error) {
         console.warn(`Failed to create episode: ${episodeData.title}`, error);
