@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
     command: ["sh", "-c", "node scripts/wait-for.mjs sqlserver:1433 --timeout 120 && node dist/index.js"]
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/3001' || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\" || exit 1"]
       interval: 10s
       retries: 10
       start_period: 20s
