@@ -1,17 +1,46 @@
 const axios = require('axios');
 
 const API_BASE_URL = 'http://localhost:3001/api';
-let AUTH_TOKEN = '';
 
-async function getAuthToken() {
+// Test user credentials for bulk import
+const TEST_USER = {
+  email: 'bulkimport@phimhub.com',
+  username: 'bulkimport',
+  password: 'BulkImport123!'
+};
+
+let AUTH_TOKEN = null;
+
+async function authenticateUser() {
   try {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-      identifier: 'admin',
-      password: 'admin123'
+    console.log('🔐 Authenticating user for bulk import...');
+    
+    // Try to register the user first
+    try {
+      await axios.post(`${API_BASE_URL}/auth/register`, TEST_USER);
+      console.log('✅ Test user created successfully');
+    } catch (error) {
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('already exists')) {
+        console.log('ℹ️ Test user already exists');
+      } else if (error.response?.status === 409) {
+        console.log('ℹ️ Test user already exists (409)');
+      } else {
+        console.log('⚠️ User registration failed, but continuing with login attempt...');
+      }
+    }
+    
+    // Login to get token
+    const loginResponse = await axios.post(`${API_BASE_URL}/auth/login`, {
+      identifier: TEST_USER.email,
+      password: TEST_USER.password
     });
-    return response.data.data.token;
+    
+    AUTH_TOKEN = loginResponse.data.data.token;
+    console.log('✅ Authentication successful');
+    console.log('🔑 Token received:', AUTH_TOKEN ? 'Yes' : 'No');
+    
   } catch (error) {
-    console.error('Failed to get auth token:', error.message);
+    console.error('❌ Authentication failed:', error.message);
     throw error;
   }
 }
@@ -28,11 +57,6 @@ async function getKKPhimMovies(page = 1) {
 
 async function importMovie(slug) {
   try {
-    // Get fresh token if needed
-    if (!AUTH_TOKEN) {
-      AUTH_TOKEN = await getAuthToken();
-    }
-    
     const response = await axios.post(`${API_BASE_URL}/movies/import-from-kkphim`, {
       slug: slug,
       options: {
@@ -58,6 +82,9 @@ async function importMovie(slug) {
 
 async function bulkImportMovies(startPage = 1, maxPages = 10) {
   console.log(`🚀 Starting bulk import from page ${startPage} to ${startPage + maxPages - 1}`);
+  
+  // Authenticate first
+  await authenticateUser();
   
   let totalImported = 0;
   let totalSkipped = 0;

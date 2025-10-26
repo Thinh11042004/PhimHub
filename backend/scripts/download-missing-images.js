@@ -126,6 +126,9 @@ async function updateMovieImagePaths(movieId, updateData) {
 
 async function processMoviesWithRemoteImages() {
   try {
+    // Authenticate first
+    await authenticateUser();
+    
     console.log('🔍 Fetching movies with remote images...');
     
     // Get all movies
