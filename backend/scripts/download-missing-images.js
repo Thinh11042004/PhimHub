@@ -3,7 +3,48 @@ const fs = require('fs');
 const path = require('path');
 
 const API_BASE_URL = 'http://localhost:3001/api';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEwMDMiLCJlbWFpbCI6InRlc3QxMjNAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3QxMjMiLCJyb2xlIjoidXNlciIsImlhdCI6MTc2MTM2MTczOSwiZXhwIjoxNzYxOTY2NTM5fQ.HDQomxzYwqhHWBfsVtBhKp-xRL2bRFMNZJH290jwN1I';
+
+// Test user credentials for image download
+const TEST_USER = {
+  email: 'imagedownload@phimhub.com',
+  username: 'imagedownload',
+  password: 'ImageDownload123!'
+};
+
+let AUTH_TOKEN = null;
+
+async function authenticateUser() {
+  try {
+    console.log('🔐 Authenticating user for image download...');
+    
+    // Try to register the user first
+    try {
+      await axios.post(`${API_BASE_URL}/auth/register`, TEST_USER);
+      console.log('✅ Test user created successfully');
+    } catch (error) {
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('already exists')) {
+        console.log('ℹ️ Test user already exists');
+      } else if (error.response?.status === 409) {
+        console.log('ℹ️ Test user already exists (409)');
+      } else {
+        console.log('⚠️ User registration failed, but continuing with login attempt...');
+      }
+    }
+    
+    // Login to get token
+    const loginResponse = await axios.post(`${API_BASE_URL}/auth/login`, {
+      identifier: TEST_USER.email,
+      password: TEST_USER.password
+    });
+    
+    AUTH_TOKEN = loginResponse.data.data.token;
+    console.log('✅ Authentication successful');
+    
+  } catch (error) {
+    console.error('❌ Authentication failed:', error.message);
+    throw error;
+  }
+}
 
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
 const IMAGES_DIR = path.join(UPLOADS_DIR, 'images');
@@ -64,6 +105,9 @@ async function updateMovieImagePaths(movieId, updateData) {
 
 async function processMoviesWithRemoteImages() {
   try {
+    // Authenticate first
+    await authenticateUser();
+    
     console.log('🔍 Fetching movies with remote images...');
     
     // Get all movies

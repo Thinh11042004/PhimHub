@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+echo "🚀 PhimHub Entrypoint Starting..."
+echo "📅 $(date)"
+echo "🔍 Working directory: $(pwd)"
+echo "📁 Files in current directory:"
+ls -la
+
 # Force install if requested
 if [ "${FORCE_NPM_INSTALL}" = "true" ]; then
   echo "FORCE_NPM_INSTALL=true -> reinstalling production dependencies..."
@@ -29,4 +35,15 @@ if [ "${AUTO_IMPORT}" = "true" ]; then
 fi
 
 # Start the app
-exec "$@"
+echo "🚀 Starting PhimHub API server..."
+echo "📁 Checking if dist/index.js exists:"
+if [ -f "dist/index.js" ]; then
+  echo "✅ dist/index.js found"
+else
+  echo "❌ dist/index.js not found!"
+  echo "📁 Contents of dist directory:"
+  ls -la dist/ || echo "dist directory does not exist"
+  exit 1
+fi
+
+exec node dist/index.js
