@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MovieService } from "../../../services/movies";
 import { getGenreDisplayName, getGenreDisplayNameFromObject } from "../../../utils/genreMapper";
+import { resolvePoster } from "../../../utils/imageProxy";
 import PosterCard from "../../../shared/components/PosterCard";
 
 /* ------------ Types ------------ */
@@ -67,48 +68,7 @@ export default function SeriesList() {
   const [itemsAll, setItemsAll] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        // Gọi API backend để lấy danh sách phim bộ
-        const response = await fetch('http://localhost:3001/api/movies?is_series=true&limit=100');
-        const data = await response.json();
-        
-        if (data.success && data.data.movies) {
-          const mapped: Series[] = data.data.movies
-            .map((movie: any) => ({
-              id: movie.slug,
-              title: movie.title,
-              year: movie.release_year || 0,
-              age: movie.age_rating,
-              genres: movie.categories ? 
-                (typeof movie.categories === 'string' && movie.categories.startsWith('[') ? 
-                  JSON.parse(movie.categories).map((g: string) => getGenreDisplayName(g)) : 
-                  movie.categories.split(',').map((g: string) => getGenreDisplayName(g.trim()))) : 
-                (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)) : []),
-              poster: movie.poster_url || movie.thumbnail_url || "",
-              totalEpisodes: movie.total_episodes || 0,
-              status: "ongoing",
-              provider: "local",
-              rating: movie.external_rating,
-              duration: movie.duration,
-              overview: movie.description,
-            }))
-            .sort((a: Series, b: Series) => (b.year || 0) - (a.year || 0)); // Sắp xếp theo năm giảm dần
-          
-          setItemsAll(mapped);
-        } else {
-          setItemsAll([]);
-        }
-      } catch (error) {
-        console.error('Error fetching series:', error);
-        setItemsAll([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  // Không cần useEffect cũ vì đã dùng logic "đắp trang sau"
 
   // state filter
   const [open, setOpen] = useState(false);
@@ -118,9 +78,9 @@ export default function SeriesList() {
   const [status, setStatus] = useState<Series["status"] | "all">("all");
   const [sort, setSort] = useState<"new"|"old"|"az"|"za"|"popular">("new");
 
-  // phân trang
+  // Pagination với "đắp từ trang sau"
   const [page, setPage] = useState(1);
-  const perPage = 24;
+  const perPage = 24; // Số phim cần hiển thị mỗi trang
 
   // năm cho filter
   const yearOptions = useMemo(() => {
@@ -130,9 +90,111 @@ export default function SeriesList() {
     return arr;
   }, []);
 
-  // áp filter
-  const filtered = useMemo(() => {
-    let arr = itemsAll.slice();
+  // Không cần filter cũ vì đã dùng logic "đắp trang sau"
+
+  // Function để "đắp từ trang sau" với logging và race condition protection
+  const fillPage = async (pageNum: number, capacity: number, abortSignal?: AbortSignal) => {
+    const result: Series[] = [];
+    let p = pageNum;
+
+    console.log(`[Series] Starting fillPage: page=${pageNum}, capacity=${capacity}`);
+
+    while (result.length < capacity) {
+      if (abortSignal?.aborted) {
+        console.log(`[Series] Aborted at page ${p}`);
+        throw new DOMException("aborted", "AbortError");
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/movies?is_series=true&page=${p}&limit=10`, {
+          cache: "no-store",
+          signal: abortSignal
+        });
+        const data = await response.json();
+        const arr = data.data?.movies ?? [];
+        
+        console.log(`[Series] Page ${p}: got ${arr.length} items`);
+        
+        if (arr.length === 0) {
+          console.log(`[Series] No more items at page ${p}, stopping`);
+          break; // Hết phim
+        }
+        
+        const mapped: Series[] = arr
+          .map((movie: any) => ({
+            id: movie.slug,
+            title: movie.title,
+            year: movie.release_year || 0,
+            age: movie.age_rating,
+            genres: movie.categories ? 
+              (typeof movie.categories === 'string' && movie.categories.startsWith('[') ? 
+                JSON.parse(movie.categories).map((g: string) => getGenreDisplayName(g)) : 
+                movie.categories.split(',').map((g: string) => getGenreDisplayName(g.trim()))) : 
+              (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)) : []),
+            poster: resolvePoster(movie),
+            totalEpisodes: movie.total_episodes || 0,
+            status: "ongoing",
+            provider: "local",
+            rating: movie.external_rating,
+            duration: movie.duration,
+            overview: movie.description,
+          }))
+          .sort((a: Series, b: Series) => (b.year || 0) - (a.year || 0));
+        
+        const need = capacity - result.length;
+        const toAdd = mapped.slice(0, need);
+        result.push(...toAdd);
+        
+        console.log(`[Series] Added ${toAdd.length} items, total: ${result.length}/${capacity}`);
+        
+        p += 1; // Nhảy tiếp trang sau để "đắp"
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log(`[Series] Request aborted at page ${p}`);
+          throw error;
+        }
+        console.error(`[Series] Error fetching page ${p}:`, error);
+        break;
+      }
+    }
+    
+    console.log(`[Series] FillPage complete: ${result.length}/${capacity} items`);
+    return result;
+  };
+
+  // State cho items đã fill
+  const [filledItems, setFilledItems] = useState<Series[]>([]);
+  const [fillingLoading, setFillingLoading] = useState(false);
+
+  // Fill page khi page thay đổi với AbortController
+  useEffect(() => {
+    const abortController = new AbortController();
+    
+    const loadPage = async () => {
+      setFillingLoading(true);
+      try {
+        const items = await fillPage(page, perPage, abortController.signal);
+        setFilledItems(items);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error filling page:', error);
+          setFilledItems([]);
+        }
+      } finally {
+        setFillingLoading(false);
+      }
+    };
+    
+    loadPage();
+    
+    return () => {
+      abortController.abort();
+    };
+  }, [page]);
+
+  // Áp dụng filter cho filled items
+  const slice = useMemo(() => {
+    let arr = filledItems.slice();
     
     if (ages.length) arr = arr.filter(s => s.age && ages.includes(s.age));
     if (years.length) arr = arr.filter(s => years.includes(s.year));
@@ -144,19 +206,12 @@ export default function SeriesList() {
       case "old": arr = arr.sort((a,b)=> a.year - b.year); break;
       case "az":  arr = arr.sort((a,b)=> a.title.localeCompare(b.title)); break;
       case "za":  arr = arr.sort((a,b)=> b.title.localeCompare(a.title)); break;
-      case "popular": default: /* TODO: dựa theo view_count */ break;
+      case "popular": default: break;
     }
     return arr;
-  }, [itemsAll, ages, years, genres, status, sort]);
+  }, [filledItems, ages, years, genres, status, sort]);
 
-  const maxPage = Math.max(1, Math.ceil(filtered.length / perPage));
-  useEffect(()=>{ if(page>maxPage) setPage(maxPage) }, [maxPage, page]);
-  const slice = filtered.slice((page-1)*perPage, page*perPage);
-
-  // Auto-scroll to top when page changes
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [page]);
+  // Không cần scroll vì không có pagination
 
   const reset = () => { 
     setAges([]); 
@@ -181,9 +236,9 @@ export default function SeriesList() {
       {/* Filter Controls */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
-          <div className="text-sm text-white/70">
-            Hiển thị <span className="font-semibold text-white">{filtered.length}</span> phim bộ
-          </div>
+           <div className="text-sm text-white/70">
+             Hiển thị <span className="font-semibold text-white">{slice.length}</span> phim bộ
+           </div>
           
           {/* Quick Stats */}
           {itemsAll.length > 0 && (
@@ -359,18 +414,20 @@ export default function SeriesList() {
         </div>
       )}
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
-            <span className="text-white/70">Đang tải phim bộ...</span>
-          </div>
-        </div>
-      )}
+       {/* Loading State */}
+       {(loading || fillingLoading) && (
+         <div className="flex items-center justify-center py-12">
+           <div className="flex items-center gap-3">
+             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+             <span className="text-white/70">
+               {loading ? 'Đang tải phim bộ...' : 'Đang đắp từ trang sau...'}
+             </span>
+           </div>
+         </div>
+       )}
 
       {/* No Series Uploaded State */}
-      {!loading && itemsAll.length === 0 && (
+      {!loading && !fillingLoading && slice.length === 0 && (
         <div className="rounded-2xl bg-dark-800/50 p-12 text-center ring-1 ring-dark-600/50">
           <div className="mx-auto mb-6 h-20 w-20 rounded-full bg-primary-500/20 flex items-center justify-center">
             <svg className="h-10 w-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,25 +457,26 @@ export default function SeriesList() {
       )}
 
       {/* Series Grid */}
-      {!loading && filtered.length > 0 && (
+      {!loading && !fillingLoading && slice.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-white font-display">Tất cả phim bộ</h2>
             <div className="h-px flex-1 bg-gradient-to-r from-primary-500/50 to-transparent"></div>
           </div>
           
-          <div className="grid grid-cols-7 gap-6 justify-items-center">
-            {slice.map(s => <SeriesPosterCard key={s.id} s={s} />)}
-            {/* Thêm placeholder để đảm bảo dòng cuối có đủ 7 phim */}
-            {Array.from({ length: (7 - (slice.length % 7)) % 7 }).map((_, index) => (
-              <div key={`placeholder-${index}`} className="w-full" />
-            ))}
-          </div>
+           <div 
+             className="grid gap-4"
+             style={{
+               gridTemplateColumns: `repeat(auto-fit, minmax(180px, 1fr))`
+             }}
+           >
+             {slice.map(s => <SeriesPosterCard key={s.id} s={s} />)}
+           </div>
         </section>
       )}
 
       {/* No Results State */}
-      {!loading && filtered.length === 0 && itemsAll.length > 0 && (
+      {!loading && !fillingLoading && slice.length === 0 && (
         <div className="rounded-2xl bg-dark-800/50 p-12 text-center ring-1 ring-dark-600/50">
           <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-white/10 flex items-center justify-center">
             <svg className="h-8 w-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -431,7 +489,7 @@ export default function SeriesList() {
       )}
 
       {/* Pagination */}
-      {!loading && maxPage > 1 && (
+      {!loading && !fillingLoading && (
         <div className="flex items-center justify-center gap-3 py-8">
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -448,12 +506,12 @@ export default function SeriesList() {
               {page}
             </div>
             <span className="text-white/50">/</span>
-            <span className="text-white/70">{maxPage}</span>
+            <span className="text-white/70">∞</span>
           </div>
           
           <button
-            onClick={() => setPage(p => Math.min(maxPage, p + 1))}
-            disabled={page === maxPage}
+            onClick={() => setPage(p => p + 1)}
+            disabled={fillingLoading}
             className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

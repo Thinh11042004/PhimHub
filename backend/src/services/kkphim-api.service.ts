@@ -109,6 +109,39 @@ export interface KKPhimDetailResponse {
 export class KKPhimAPIService {
   private readonly baseURL = 'https://phimapi.com';
 
+  /**
+   * Normalize image URL to ensure proper format
+   */
+  private normalizeImageUrl(u: string | null | undefined, baseHostForRelative = "https://kkphim.men"): string | null {
+    if (!u) return null;
+    u = String(u).trim();
+    
+    // Return null if empty after trimming
+    if (!u) return null;
+
+    // Nếu lỡ gắn phimimg.com rồi thì bỏ phần proxy đi để lấy URL gốc
+    const PHIMIMG = "phimimg.com/";
+    const idx = u.indexOf(PHIMIMG);
+    if (idx !== -1) {
+      const tail = u.slice(idx + PHIMIMG.length);
+      if (/^https?:\/\//i.test(tail)) u = tail; // dạng https://phimimg.com/https://xxx
+    }
+
+    // Fix dạng //cdn/... -> thêm scheme
+    if (u.startsWith("//")) u = "https:" + u;
+
+    // Nếu là relative path -> gắn base (site gốc) hoặc để proxy lo
+    if (!/^https?:\/\//i.test(u)) {
+      if (!u.startsWith("/")) u = "/" + u;
+      return `${baseHostForRelative}${u}`;
+    }
+
+    // Ưu tiên https
+    if (u.startsWith("http://")) u = "https://" + u.slice(7);
+
+    return u;
+  }
+
   /** Perform GET with fallback endpoints */
   private async requestWithFallback<T>(paths: string[], params?: any): Promise<T> {
     let lastErr: any;
@@ -316,8 +349,11 @@ export class KKPhimAPIService {
       duration: this.parseDuration(movie.time) || null,
       age_rating: null,
       // Keep thumbnail as thumb_url and banner as poster_url (API naming is swapped)
-      thumbnail_url: movie.thumb_url || null,
-      banner_url: movie.poster_url || null,
+      // Normalize image URLs before saving
+      remote_thumbnail_url: this.normalizeImageUrl(movie.thumb_url),
+      remote_banner_url: this.normalizeImageUrl(movie.poster_url),
+      thumbnail_url: null, // local path after download, leave empty during import
+      banner_url: null, // local path after download, leave empty during import
       trailer_url: movie.trailer_url || null,
       is_series: isSeries,
       status: (movie.status === 'completed' ? 'published' : 'draft') as 'published' | 'draft' | 'archived',

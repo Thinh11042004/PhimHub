@@ -316,9 +316,13 @@ export interface UpdateMovieRequest {
   is_series?: boolean;
   status?: 'published' | 'draft' | 'archived';
   country?: string; // Primary country of origin
+  categories?: string; // JSON string containing array of genre slugs
   actor_ids?: number[];
   director_ids?: number[];
   genre_ids?: number[];
+  // Local media fields
+  local_thumbnail_path?: string;
+  local_banner_path?: string;
   // External API fields
   external_id?: string;
   tmdb_id?: string;

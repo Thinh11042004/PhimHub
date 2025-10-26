@@ -29,4 +29,4 @@ if [ "${AUTO_IMPORT}" = "true" ]; then
 fi
 
 # Start the app
-exec "$@"
+exec node dist/index.js

@@ -30,6 +30,8 @@ export interface TransformedMovieData {
   age_rating?: string | null;
   thumbnail_url?: string | null;
   banner_url?: string | null;
+  remote_thumbnail_url?: string | null;
+  remote_banner_url?: string | null;
   trailer_url?: string | null;
   is_series: boolean;
   status: 'published' | 'draft' | 'archived';
@@ -87,7 +89,12 @@ export class MovieImportService {
       
       // Save remote image urls for future reference
       try {
-        await this.movieRepo.setRemoteImageUrls(movie.id, transformedData.thumbnail_url || null, transformedData.banner_url || null, transaction);
+        await this.movieRepo.setRemoteImageUrls(
+          movie.id, 
+          transformedData.remote_thumbnail_url || null, 
+          transformedData.remote_banner_url || null, 
+          transaction
+        );
       } catch {}
       
       // 5. Link relationships
@@ -96,6 +103,10 @@ export class MovieImportService {
       }
       if (genreIds.length > 0) {
         await this.linkMovieGenres(movie.id, genreIds, transaction);
+        
+        // Update categories column with genre slugs
+        const genreSlugs = transformedData.genres.map(genre => genre.slug);
+        await this.movieRepo.update(movie.id, { categories: JSON.stringify(genreSlugs) }, transaction);
       }
       if (directorIds.length > 0) {
         await this.linkMovieDirectors(movie.id, directorIds, transaction);
@@ -158,6 +169,10 @@ export class MovieImportService {
         await this.movieRepo.removeMovieGenres(movieId, transaction);
         if (genreIds.length > 0) {
           await this.linkMovieGenres(movieId, genreIds, transaction);
+          
+          // Update categories column with genre slugs
+          const genreSlugs = transformedData.genres.map(genre => genre.slug);
+          await this.movieRepo.update(movieId, { categories: JSON.stringify(genreSlugs) }, transaction);
         }
 
         // Update directors

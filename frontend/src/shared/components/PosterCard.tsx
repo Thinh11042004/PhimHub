@@ -4,7 +4,7 @@ import { MovieService } from "../../services/movies";
 import { getGenreDisplayNameFromObject } from "../../utils/genreMapper";
 import { AddToListDialog } from "./AddToListDialog";
 import { WatchHistoryItem } from "../../services/watchHistory";
-import { getImageUrl } from "../../utils/imageProxy";
+import { resolvePoster } from "../../utils/imageProxy";
 
 type Movie = {
   id: string;
@@ -95,12 +95,21 @@ export default function PosterCard({
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       const token = localStorage.getItem('phimhub:token');
-      if (token) {
+      // Only check API if we have a valid token
+      if (token && token.trim() !== '') {
         // Check API for authenticated users
         try {
           const { InteractionsApi } = await import('../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(item.id, isSeries ? 'series' : 'movie');
-          setIsFavorited(response.isFavorited);
+          // Check if response exists and has isFavorited property
+          if (response && typeof response.isFavorited === 'boolean') {
+            setIsFavorited(response.isFavorited);
+          } else {
+            // Fallback to localStorage if response is invalid
+            const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
+            const isInFavorites = favoritesData.some((fav: any) => (fav.id || fav) === item.id);
+            setIsFavorited(isInFavorites);
+          }
         } catch (error) {
           console.error('Error checking favorite status:', error);
           // Fallback to localStorage
@@ -123,12 +132,21 @@ export default function PosterCard({
   useEffect(() => {
     const handleFavoritesUpdate = async () => {
       const token = localStorage.getItem('phimhub:token');
-      if (token) {
+      // Only check API if we have a valid token
+      if (token && token.trim() !== '') {
         // Check API for authenticated users
         try {
           const { InteractionsApi } = await import('../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(item.id, isSeries ? 'series' : 'movie');
-          setIsFavorited(response.isFavorited);
+          // Check if response exists and has isFavorited property
+          if (response && typeof response.isFavorited === 'boolean') {
+            setIsFavorited(response.isFavorited);
+          } else {
+            // Fallback to localStorage if response is invalid
+            const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
+            const isInFavorites = favoritesData.some((fav: any) => (fav.id || fav) === item.id);
+            setIsFavorited(isInFavorites);
+          }
         } catch (error) {
           console.error('Error checking favorite status:', error);
           // Fallback to localStorage
@@ -288,10 +306,13 @@ export default function PosterCard({
         className="relative overflow-hidden rounded-xl bg-dark-800/50 ring-1 ring-dark-600/50 hover:ring-primary-400/50 hover:scale-105 transition-all duration-200"
       >
         <img
-          src={getImageUrl(item.poster)}
+          src={resolvePoster(item)}
           alt={item.title}
           loading="lazy"
           className="aspect-[2/3] w-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = '/src/assets/default-poster.jpg';
+          }}
         />
         
         {/* Rating badge */}

@@ -33,4 +33,4 @@ RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 3001
 
-CMD ["./docker-entrypoint.sh"]
+CMD ["node", "dist/index.js"]

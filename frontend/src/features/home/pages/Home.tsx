@@ -4,6 +4,7 @@ import { MovieService } from "../../../services/movies";
 import { watchHistoryService, WatchHistoryItem } from "../../../services/watchHistory";
 import { useAuth } from "../../../store/auth";
 import { getGenreDisplayName, getGenreDisplayNameFromObject } from "../../../utils/genreMapper";
+import { getBannerUrl, resolvePoster } from "../../../utils/imageProxy";
 import PosterCard from "../../../shared/components/PosterCard";
 import { AddToListDialog } from "../../../shared/components/AddToListDialog";
 import LoginRequiredModal from "../../../shared/components/LoginRequiredModal";
@@ -791,7 +792,7 @@ export default function Home() {
                 JSON.parse(movie.categories).map((g: string) => getGenreDisplayName(g)).slice(0, 3) : 
                 movie.categories.split(',').map((g: string) => getGenreDisplayName(g.trim())).slice(0, 3)) : 
               (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)).slice(0, 3) : []),
-            image: movie.banner_url,
+            image: getBannerUrl(movie.banner_url),
             // Extra movie info
             rating: movie.external_rating,
             ageRating: movie.age_rating,
@@ -852,7 +853,7 @@ export default function Home() {
             sub: movie.is_series 
               ? `${movie.release_year || 'N/A'} · ${movie.total_episodes || 0} tập`
               : `${movie.release_year || 'N/A'} · ${movie.duration || 0} phút`,
-            img: movie.poster_url || movie.thumbnail_url || "",
+            img: resolvePoster(movie),
             year: movie.release_year,
             age: movie.age_rating || movie.age,
             rating: movie.external_rating,
@@ -898,9 +899,9 @@ export default function Home() {
             setNewMovies(convertToItems(newMoviesList));
             setSectionsLoaded(prev => ({ ...prev, newMovies: true }));
             
-            // New TV: Latest series (is_series = true)
+            // New TV: Latest series (is_series = true and published)
             const newTVList = movies
-              .filter((m: any) => m.is_series)
+              .filter((m: any) => m.is_series && m.status === 'published')
               .sort((a: any, b: any) => (b.release_year || 0) - (a.release_year || 0))
               .slice(0, 24);
             setNewTV(convertToItems(newTVList));

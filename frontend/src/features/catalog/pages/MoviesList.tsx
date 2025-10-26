@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MovieService } from "../../../services/movies";
 import { getGenreDisplayName, getGenreDisplayNameFromObject } from "../../../utils/genreMapper";
+import { resolvePoster } from "../../../utils/imageProxy";
 import PosterCard from "../../../shared/components/PosterCard";
 
 /* --------- Data model (mapped từ provider/backend) --------- */
@@ -65,12 +66,16 @@ export default function MoviesList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
         setLoading(true);
         // Gọi API backend để lấy danh sách phim lẻ
-        const response = await fetch('http://localhost:3001/api/movies?is_series=false&limit=100');
+        const response = await fetch('http://localhost:3001/api/movies?is_series=false&limit=1000');
         const data = await response.json();
+        
+        if (!isMounted) return; // Prevent state update if component unmounted
         
         if (data.success && data.data.movies) {
           const mapped: Movie[] = data.data.movies
@@ -84,7 +89,7 @@ export default function MoviesList() {
                   JSON.parse(movie.categories).map((g: string) => getGenreDisplayName(g)) : 
                   movie.categories.split(',').map((g: string) => getGenreDisplayName(g.trim()))) : 
                 (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)) : []),
-              poster: movie.poster_url || movie.thumbnail_url || "",
+              poster: resolvePoster(movie),
               provider: "local",
               rating: movie.external_rating,
               duration: movie.duration,
@@ -98,11 +103,19 @@ export default function MoviesList() {
         }
       } catch (error) {
         console.error('Error fetching movies:', error);
-        setItemsAll([]);
+        if (isMounted) {
+          setItemsAll([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     })();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // state filter
@@ -113,9 +126,9 @@ export default function MoviesList() {
   const [genres, setGenres] = useState<string[]>([]);
   const [sort, setSort] = useState<"new"|"old"|"az"|"za"|"popular">("new");
 
-  // phân trang
+  // Pagination với "đắp từ trang sau"
   const [page, setPage] = useState(1);
-  const perPage = 24;
+  const perPage = 24; // Số phim cần hiển thị mỗi trang
 
   // tính list năm hiển thị filter
   const yearOptions = useMemo(() => {
@@ -143,14 +156,123 @@ export default function MoviesList() {
     return arr;
   }, [itemsAll, type, ages, years, genres, sort]);
 
-  const maxPage = Math.max(1, Math.ceil(filtered.length / perPage));
-  useEffect(()=>{ if(page>maxPage) setPage(maxPage) }, [maxPage, page]);
-  const slice = filtered.slice((page-1)*perPage, page*perPage);
+  // Function để "đắp từ trang sau" với logging và race condition protection
+  const fillPage = async (pageNum: number, capacity: number, abortSignal?: AbortSignal) => {
+    const result: Movie[] = [];
+    let p = pageNum;
 
-  // Auto-scroll to top when page changes
+    console.log(`[Movies] Starting fillPage: page=${pageNum}, capacity=${capacity}`);
+
+    while (result.length < capacity) {
+      if (abortSignal?.aborted) {
+        console.log(`[Movies] Aborted at page ${p}`);
+        throw new DOMException("aborted", "AbortError");
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/movies?is_series=false&page=${p}&limit=10`, {
+          cache: "no-store",
+          signal: abortSignal
+        });
+        const data = await response.json();
+        const arr = data.data?.movies ?? [];
+        
+        console.log(`[Movies] Page ${p}: got ${arr.length} items`);
+        
+        if (arr.length === 0) {
+          console.log(`[Movies] No more items at page ${p}, stopping`);
+          break; // Hết phim
+        }
+        
+        const mapped: Movie[] = arr
+          .map((movie: any) => ({
+            id: movie.slug,
+            title: movie.title,
+            year: movie.release_year || 0,
+            age: movie.age_rating,
+            genres: movie.categories ? 
+              (typeof movie.categories === 'string' && movie.categories.startsWith('[') ? 
+                JSON.parse(movie.categories).map((g: string) => getGenreDisplayName(g)) : 
+                movie.categories.split(',').map((g: string) => getGenreDisplayName(g.trim()))) : 
+              (movie.genres ? movie.genres.map((g: any) => getGenreDisplayName(g.slug || g.name || g)) : []),
+            poster: resolvePoster(movie),
+            provider: "local",
+            rating: movie.external_rating,
+            duration: movie.duration,
+            overview: movie.description,
+          }))
+          .sort((a: Movie, b: Movie) => (b.year || 0) - (a.year || 0));
+        
+        const need = capacity - result.length;
+        const toAdd = mapped.slice(0, need);
+        result.push(...toAdd);
+        
+        console.log(`[Movies] Added ${toAdd.length} items, total: ${result.length}/${capacity}`);
+        
+        p += 1; // Nhảy tiếp trang sau để "đắp"
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log(`[Movies] Request aborted at page ${p}`);
+          throw error;
+        }
+        console.error(`[Movies] Error fetching page ${p}:`, error);
+        break;
+      }
+    }
+    
+    console.log(`[Movies] FillPage complete: ${result.length}/${capacity} items`);
+    return result;
+  };
+
+  // State cho items đã fill
+  const [filledItems, setFilledItems] = useState<Movie[]>([]);
+  const [fillingLoading, setFillingLoading] = useState(false);
+
+  // Fill page khi page thay đổi với AbortController
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const abortController = new AbortController();
+    
+    const loadPage = async () => {
+      setFillingLoading(true);
+      try {
+        const items = await fillPage(page, perPage, abortController.signal);
+        setFilledItems(items);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error filling page:', error);
+          setFilledItems([]);
+        }
+      } finally {
+        setFillingLoading(false);
+      }
+    };
+    
+    loadPage();
+    
+    return () => {
+      abortController.abort();
+    };
   }, [page]);
+
+  // Áp dụng filter cho filled items
+  const slice = useMemo(() => {
+    let arr = filledItems.slice();
+    
+    if (ages.length) arr = arr.filter(m => m.age && ages.includes(m.age));
+    if (years.length) arr = arr.filter(m => years.includes(m.year));
+    if (genres.length) arr = arr.filter(m => genres.some(g => m.genres.includes(g)));
+
+    switch (sort) {
+      case "new": arr = arr.sort((a,b)=> b.year - a.year); break;
+      case "old": arr = arr.sort((a,b)=> a.year - b.year); break;
+      case "az":  arr = arr.sort((a,b)=> a.title.localeCompare(b.title)); break;
+      case "za":  arr = arr.sort((a,b)=> b.title.localeCompare(a.title)); break;
+      case "popular": default: break;
+    }
+    return arr;
+  }, [filledItems, ages, years, genres, sort]);
+
+  // Không cần scroll vì không có pagination
 
   const reset = () => { 
     setAges([]); 
@@ -337,11 +459,13 @@ export default function MoviesList() {
       )}
 
       {/* Loading State */}
-      {loading && (
+      {(loading || fillingLoading) && (
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
-            <span className="text-white/70">Đang tải phim...</span>
+            <span className="text-white/70">
+              {loading ? 'Đang tải phim lẻ...' : 'Đang đắp từ trang sau...'}
+            </span>
           </div>
         </div>
       )}
@@ -384,12 +508,13 @@ export default function MoviesList() {
             <div className="h-px flex-1 bg-gradient-to-r from-primary-500/50 to-transparent"></div>
           </div>
           
-          <div className="grid grid-cols-7 gap-6 justify-items-center">
+          <div 
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: `repeat(auto-fit, minmax(180px, 1fr))`
+            }}
+          >
             {slice.map(m => <MoviesPosterCard key={m.id} m={m} />)}
-            {/* Thêm placeholder để đảm bảo dòng cuối có đủ 7 phim */}
-            {Array.from({ length: (7 - (slice.length % 7)) % 7 }).map((_, index) => (
-              <div key={`placeholder-${index}`} className="w-full" />
-            ))}
           </div>
         </section>
       )}
@@ -408,7 +533,7 @@ export default function MoviesList() {
       )}
 
       {/* Pagination */}
-      {!loading && maxPage > 1 && (
+      {!loading && !fillingLoading && (
         <div className="flex items-center justify-center gap-3 py-8">
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -425,12 +550,12 @@ export default function MoviesList() {
               {page}
             </div>
             <span className="text-white/50">/</span>
-            <span className="text-white/70">{maxPage}</span>
+            <span className="text-white/70">∞</span>
           </div>
           
           <button
-            onClick={() => setPage(p => Math.min(maxPage, p + 1))}
-            disabled={page === maxPage}
+            onClick={() => setPage(p => p + 1)}
+            disabled={fillingLoading}
             className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

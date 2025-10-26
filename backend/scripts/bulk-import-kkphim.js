@@ -1,7 +1,20 @@
 const axios = require('axios');
 
 const API_BASE_URL = 'http://localhost:3001/api';
-const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEwMDMiLCJlbWFpbCI6InRlc3QxMjNAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3QxMjMiLCJyb2xlIjoidXNlciIsImlhdCI6MTc2MTM2MTczOSwiZXhwIjoxNzYxOTY2NTM5fQ.HDQomxzYwqhHWBfsVtBhKp-xRL2bRFMNZJH290jwN1I';
+let AUTH_TOKEN = '';
+
+async function getAuthToken() {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+      identifier: 'admin',
+      password: 'admin123'
+    });
+    return response.data.data.token;
+  } catch (error) {
+    console.error('Failed to get auth token:', error.message);
+    throw error;
+  }
+}
 
 async function getKKPhimMovies(page = 1) {
   try {
@@ -15,6 +28,11 @@ async function getKKPhimMovies(page = 1) {
 
 async function importMovie(slug) {
   try {
+    // Get fresh token if needed
+    if (!AUTH_TOKEN) {
+      AUTH_TOKEN = await getAuthToken();
+    }
+    
     const response = await axios.post(`${API_BASE_URL}/movies/import-from-kkphim`, {
       slug: slug,
       options: {
