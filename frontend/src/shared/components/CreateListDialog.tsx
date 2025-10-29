@@ -73,14 +73,14 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-md mx-4 ring-1 ring-gray-700/50">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Tạo danh sách mới</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+          <h2 className="text-xl font-bold text-white">Tạo danh sách mới</h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-200 transition-colors p-2 hover:bg-gray-800/50 rounded-full"
             disabled={isLoading}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,19 +93,19 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
               <div className="flex items-center">
                 <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-red-700 text-sm">{error}</span>
+                <span className="text-red-300 text-sm">{error}</span>
               </div>
             </div>
           )}
 
           {/* List Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
               Tên danh sách *
             </label>
             <input
@@ -115,7 +115,7 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Nhập tên danh sách..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-500"
+              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder:text-gray-400"
               maxLength={255}
               disabled={isLoading}
               required
@@ -124,7 +124,7 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-white mb-2">
               Mô tả
             </label>
             <textarea
@@ -134,19 +134,19 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
               onChange={handleInputChange}
               placeholder="Mô tả ngắn về danh sách này..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-500"
+              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-white placeholder:text-gray-400"
               maxLength={500}
               disabled={isLoading}
             />
           </div>
 
           {/* Public Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
             <div>
-              <label htmlFor="isPublic" className="text-sm font-medium text-gray-900">
+              <label htmlFor="isPublic" className="text-sm font-medium text-white">
                 Danh sách công khai
               </label>
-              <p className="text-xs text-gray-700 mt-1">
+              <p className="text-xs text-gray-300 mt-1">
                 Cho phép người khác xem danh sách này
               </p>
             </div>
@@ -160,7 +160,7 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
                 className="sr-only peer"
                 disabled={isLoading}
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
 
@@ -169,7 +169,7 @@ export const CreateListDialog: React.FC<CreateListDialogProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 text-white bg-gray-700/50 hover:bg-gray-700/70 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600/50"
               disabled={isLoading}
             >
               Hủy

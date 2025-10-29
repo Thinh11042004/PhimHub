@@ -16,6 +16,7 @@ import { useLoginRequired } from "@shared/hooks/useLoginRequired";
 import { useRealtimeCommentsSimple as useRealtimeComments } from "@shared/hooks/useRealtimeCommentsSimple";
 import { formatDate } from "@shared/utils/dateFormatter";
 import ActorCard from "@shared/components/ActorCard";
+import Avatar from "@shared/components/Avatar";
 
 export default function WatchMovie() {
   const { slug } = useParams();
@@ -54,6 +55,20 @@ export default function WatchMovie() {
       setCommentsLoading(false);
     }
   };
+
+  // Refresh comments when avatar changes
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      if (movie?.id) {
+        loadComments();
+      }
+    };
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate);
+    return () => {
+      window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    };
+  }, [movie?.id]);
 
   // Send comment
   const handleSendComment = async () => {
@@ -779,9 +794,12 @@ export default function WatchMovie() {
                         <div key={c.id} className="space-y-4">
                           {/* Main Comment */}
                           <div className="flex gap-4">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                              {String(c.fullname || c.username || 'U').slice(0,1).toUpperCase()}
-                            </div>
+                            <Avatar 
+                              avatar={c.avatar}
+                              username={c.username}
+                              fullname={c.fullname}
+                              size="medium"
+                            />
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="font-semibold text-white">{c.fullname || c.username || 'Ẩn danh'}</span>
@@ -960,9 +978,12 @@ export default function WatchMovie() {
                             <div className="ml-14 space-y-3">
                               {replies.map((reply) => (
                                 <div key={reply.id} className="flex gap-4">
-                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs">
-                                    {String(reply.fullname || reply.username || 'U').slice(0,1).toUpperCase()}
-                                  </div>
+                                  <Avatar 
+                                    avatar={reply.avatar}
+                                    username={reply.username}
+                                    fullname={reply.fullname}
+                                    size="small"
+                                  />
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="font-semibold text-white text-sm">{reply.fullname || reply.username || 'Ẩn danh'}</span>

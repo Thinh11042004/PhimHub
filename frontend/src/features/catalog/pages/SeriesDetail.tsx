@@ -18,6 +18,7 @@ import { directorService } from "../../../services/directors";
 import { recommendationsService, RecommendationItem } from "../../../services/recommendations";
 import { useRealtimeCommentsSimple as useRealtimeComments } from "../../../shared/hooks/useRealtimeCommentsSimple";
 import { formatDate } from "../../../shared/utils/dateFormatter";
+import Avatar from "@shared/components/Avatar";
 import { useNotification } from "../../../shared/hooks/useNotification";
 import { NotificationContainer } from "../../../shared/components/NotificationContainer";
 import { useConfirm } from "../../../shared/components/ConfirmModalProvider";
@@ -126,6 +127,34 @@ export default function SeriesDetail() {
         setComments([]);
       }
     })();
+  }, [detail, provider]);
+
+  // Refresh comments when avatar changes
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      if (detail) {
+        (async () => {
+          try {
+            const api = (await import('../../../services/movies/interactions')).InteractionsApi;
+            const contentId = Number((detail as any).contentId);
+            if (contentId) {
+              const list = await api.listComments(contentId, 1, 20);
+              setComments(list);
+            } else if (detail?.id) {
+              const list = await api.listExternalComments(String(provider || 'local'), String(detail.id), 1, 20);
+              setComments(list);
+            }
+          } catch (e) {
+            console.error('❌ Error refreshing comments:', e);
+          }
+        })();
+      }
+    };
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate);
+    return () => {
+      window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    };
   }, [detail, provider]);
 
   // Realtime comments
@@ -1089,9 +1118,12 @@ export default function SeriesDetail() {
                     <div key={c.id} className="space-y-4">
                       {/* Main Comment */}
                       <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                          {String(c.fullname || c.username || 'U').slice(0,1).toUpperCase()}
-                        </div>
+                        <Avatar 
+                          avatar={c.avatar}
+                          username={c.username}
+                          fullname={c.fullname}
+                          size="medium"
+                        />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-white">{c.fullname || c.username || 'Ẩn danh'}</span>
@@ -1283,9 +1315,12 @@ export default function SeriesDetail() {
                         <div className="ml-14 space-y-3">
                           {replies.map((reply) => (
                             <div key={reply.id} className="flex gap-4">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs">
-                                {String(reply.fullname || reply.username || 'U').slice(0,1).toUpperCase()}
-                              </div>
+                              <Avatar 
+                                avatar={reply.avatar}
+                                username={reply.username}
+                                fullname={reply.fullname}
+                                size="small"
+                              />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="font-semibold text-white text-sm">{reply.fullname || reply.username || 'Ẩn danh'}</span>
