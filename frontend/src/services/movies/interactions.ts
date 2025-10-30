@@ -5,7 +5,7 @@ function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:3001/api';
 
 export const InteractionsApi = {
   // Favorites - Updated to use new API endpoints
@@ -25,6 +25,7 @@ export const InteractionsApi = {
       body: JSON.stringify({ movieId, movieType, provider: 'local' }),
       credentials: 'include'
     });
+    if (res.status === 401) throw new Error('Unauthorized');
     return res.json();
   },
 
@@ -34,6 +35,7 @@ export const InteractionsApi = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       credentials: 'include'
     });
+    if (res.status === 401) throw new Error('Unauthorized');
     return res.json();
   },
 
@@ -42,6 +44,7 @@ export const InteractionsApi = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       credentials: 'include'
     });
+    if (res.status === 401) return { isFavorited: false } as any;
     const json = await res.json();
     return json.data;
   },

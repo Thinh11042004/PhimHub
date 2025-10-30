@@ -97,9 +97,7 @@ export default function VideoPlayer({ src, poster, subtitles = [], startPosition
         fragLoadingRetryDelay: 1000,
         startFragPrefetch: true,
         testBandwidth: true,
-        progressive: false,
-        lowLatencyMode: false,
-        backBufferLength: 30
+        progressive: false
       });
       hls.loadSource(src);
       hls.attachMedia(video);

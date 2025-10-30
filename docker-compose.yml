@@ -1,0 +1,58 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: phimhub-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=PhimHub123!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: phimhub-backend
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - FRONTEND_URL=http://localhost:5173
+      - JWT_SECRET=change-me
+      # Point to existing host SQL Server instance
+      - DB_HOST=host.docker.internal
+      - DB_PORT=1433
+      - DB_USER=sa
+      - DB_PASS=YourStrong!Passw0rd
+      - DB_NAME=PhimHub
+      - DB_ENCRYPT=true
+      - DB_TRUST_SERVER_CERT=true
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - sqlserver
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # This is baked into the frontend at build time
+        VITE_API_BASE_URL: http://localhost:3001/api
+    container_name: phimhub-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+
+

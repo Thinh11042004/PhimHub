@@ -627,6 +627,9 @@ export default function Home() {
   const { showLoginRequired, modalConfig, showLoginRequiredModal, hideLoginRequiredModal, handleLogin } = useLoginRequired();
   const { success, error: showError } = useNotification();
   
+  // Bump this to force-refresh cached home data when backend data shape changes
+  const CACHE_VERSION = '2025-10-30-posters-fix-v1';
+  
   // ---- Banner state ----
   const [idx, setIdx] = useState(0);
   const [uploadedBanners, setUploadedBanners] = useState<Banner[]>([]);
@@ -665,6 +668,17 @@ export default function Home() {
 
   // Load favorites and watchlist from localStorage
   useEffect(() => {
+    // Auto-invalidate old home caches once after posters fix
+    try {
+      const versionKey = 'phimhub:cache-version';
+      const currentVersion = localStorage.getItem(versionKey);
+      if (currentVersion !== CACHE_VERSION) {
+        ['phimhub:home-movies','phimhub:home-movies:time','phimhub:home-banners','phimhub:home-banners:time']
+          .forEach(k => localStorage.removeItem(k));
+        localStorage.setItem(versionKey, CACHE_VERSION);
+      }
+    } catch {}
+
     const loadFavorites = async () => {
       const token = localStorage.getItem('phimhub:token');
       if (token) {
@@ -759,7 +773,7 @@ export default function Home() {
         const cachedData = localStorage.getItem(cacheKey);
         const cacheTime = localStorage.getItem(cacheKey + ':time');
         const now = Date.now();
-        const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for banners
+        const CACHE_DURATION = 2 * 60 * 1000; // shorter cache (2 minutes) for quicker UI refresh
         
         let moviesWithBanner = [];
         
@@ -770,7 +784,7 @@ export default function Home() {
         } else {
           // Fetch fresh data
           console.log('Home - Fetching fresh banners data');
-          const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:3001/api'}/movies?limit=20`);
+          const response = await fetch(`${(import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:3001/api'}/movies?limit=20`);
           const data = await response.json();
           
           if (data.success && data.data.movies) {
@@ -825,7 +839,7 @@ export default function Home() {
         const cachedData = localStorage.getItem(cacheKey);
         const cacheTime = localStorage.getItem(cacheKey + ':time');
         const now = Date.now();
-        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+        const CACHE_DURATION = 2 * 60 * 1000; // shorter cache (2 minutes)
         
         let movies = [];
         
@@ -836,7 +850,7 @@ export default function Home() {
         } else {
           // Fetch fresh data
           console.log('Home - Fetching fresh movies data');
-          const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:3001/api'}/movies?limit=50`); // Reduced from 100 to 50
+          const response = await fetch(`${(import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:3001/api'}/movies?limit=50`);
           const data = await response.json();
           
           if (data.success && data.data.movies) {
