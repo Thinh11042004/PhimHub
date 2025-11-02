@@ -30,14 +30,32 @@ async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API error response:', errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      
+      // Try to parse error as JSON
+      let errorData: any = null;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        // If not JSON, use text as message
+      }
+      
+      // Create error object with status and message
+      const error = new Error(errorData?.message || errorText || 'Đã xảy ra lỗi') as any;
+      error.status = response.status;
+      error.response = errorData;
+      throw error;
     }
 
     const data = await response.json();
     console.log('API response data:', data);
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('API call failed:', error);
+    // If error already has status, just rethrow
+    if (error.status) {
+      throw error;
+    }
+    // Otherwise wrap it
     throw error;
   }
 }
@@ -163,13 +181,33 @@ export const authApi = {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      
+      // Try to parse error as JSON
+      let errorData: any = null;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        // If not JSON, use text as message
+      }
+      
+      // Create error object with status and message
+      const error = new Error(errorData?.message || errorText || 'Đã xảy ra lỗi') as any;
+      error.status = response.status;
+      error.response = errorData;
+      throw error;
     }
 
     const data = await response.json();
+    
+    // Validate response structure
+    if (!data || !data.data || !data.data.user) {
+      console.error('Upload avatar: Invalid response structure', data);
+      throw new Error('Phản hồi từ server không hợp lệ');
+    }
+    
     return {
       user: data.data.user,
-      token: data.data.token
+      token: data.data.token || '' // Token is optional, will keep existing token if not provided
     };
   },
 

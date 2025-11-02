@@ -38,7 +38,27 @@ export async function apiRequest<T = any>(endpoint: string, init: RequestInit = 
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text || res.statusText);
+    let errorMessage = res.statusText;
+    
+    // Thử parse JSON error response
+    if (text) {
+      try {
+        const errorJson = JSON.parse(text);
+        if (errorJson.message) {
+          errorMessage = errorJson.message;
+        } else if (errorJson.error) {
+          errorMessage = errorJson.error;
+        }
+      } catch {
+        // Nếu không phải JSON, dùng text trực tiếp
+        errorMessage = text || res.statusText;
+      }
+    }
+    
+    const error: any = new Error(errorMessage);
+    error.status = res.status;
+    error.response = text;
+    throw error;
   }
   // Some endpoints may return empty bodies on DELETE
   const text = await res.text();

@@ -4,6 +4,7 @@ import { actorService, ActorWithMovies } from '../../../services/actors';
 import { Movie } from '../../../services/movies/model';
 import PosterCard from '../../../shared/components/PosterCard';
 import { useAuth } from '../../../store/auth';
+import { getImageUrl } from '../../../utils/imageProxy';
 
 export default function ActorDetail() {
   const { id } = useParams<{ id: string }>();
@@ -111,7 +112,7 @@ export default function ActorDetail() {
         {/* Background Image */}
         {actor.photo_url && (
           <div className="absolute inset-0 h-96 bg-cover bg-center bg-no-repeat opacity-20"
-               style={{ backgroundImage: `url(${actor.photo_url})` }}>
+               style={{ backgroundImage: `url(${getImageUrl(actor.photo_url)})` }}>
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent"></div>
           </div>
         )}
@@ -124,7 +125,7 @@ export default function ActorDetail() {
               <div className="w-48 h-48 lg:w-64 lg:h-64 rounded-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl">
                 {actor.photo_url ? (
                   <img
-                    src={actor.photo_url}
+                    src={getImageUrl(actor.photo_url)}
                     alt={actor.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -234,7 +235,7 @@ export default function ActorDetail() {
                 <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-white/5 ring-1 ring-white/10 group-hover:ring-white/30 transition-all duration-300 group-hover:scale-105">
                   {movie.poster_url ? (
                     <img
-                      src={movie.poster_url}
+                      src={getImageUrl(movie.poster_url)}
                       alt={movie.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {

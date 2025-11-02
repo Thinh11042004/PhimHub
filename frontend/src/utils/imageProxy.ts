@@ -1,7 +1,9 @@
 /**
- * Utility to handle image URLs and proxy them through Vite dev server
- * to avoid CORS issues during development
+ * Utility to handle image URLs and proxy them through backend
+ * to avoid CORS and SSL certificate issues
  */
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 
 export function getImageUrl(originalUrl: string): string {
   if (!originalUrl) return '';
@@ -13,14 +15,19 @@ export function getImageUrl(originalUrl: string): string {
     return originalUrl;
   }
   
-  // If it's a phimimg.com URL, proxy it through our dev server
-  if (originalUrl.includes('phimimg.com')) {
-    // Extract the path from the full URL
-    const url = new URL(originalUrl);
-    return `/api/images${url.pathname}${url.search}`;
+  // Proxy images from problematic domains through backend
+  // This fixes SSL certificate issues (ERR_CERT_AUTHORITY_INVALID)
+  const needsProxy = 
+    originalUrl.includes('img.phimapi.com') ||
+    originalUrl.includes('phimimg.com') ||
+    originalUrl.includes('phimapi.com');
+  
+  if (needsProxy) {
+    // Use backend proxy endpoint to avoid SSL/cors issues
+    return `${API_BASE}/proxy?url=${encodeURIComponent(originalUrl)}`;
   }
   
-  // For other external URLs, return as is (they might work or might have CORS issues)
+  // For other external URLs, return as is
   return originalUrl;
 }
 

@@ -25,7 +25,16 @@ export const authService = {
     try {
       return await authApi.login(data);
     } catch (error: any) {
-      // Handle API errors
+      // Error message is already parsed from JSON in apiCall
+      // If error has a message, use it directly
+      if (error.message) {
+        // Customize message for 401
+        if (error.status === 401) {
+          throw new Error("Email/tên người dùng hoặc mật khẩu không đúng");
+        }
+        throw error; // Re-throw with the parsed message
+      }
+      // Fallback
       if (error.status === 401) {
         throw new Error("Email/tên người dùng hoặc mật khẩu không đúng");
       }
@@ -41,14 +50,19 @@ export const authService = {
       return response;
     } catch (error: any) {
       console.error("Register API error:", error);
-      // Handle API errors
+      // Error message is already parsed from JSON in apiCall
+      // If error has a message, use it directly
+      if (error.message) {
+        throw error; // Re-throw with the parsed message
+      }
+      // Fallback for any other errors
       if (error.status === 409) {
-        throw new Error(error.response?.message || "Email hoặc tên người dùng đã được sử dụng");
+        throw new Error("Email hoặc tên người dùng đã được sử dụng");
       }
       if (error.status === 400) {
-        throw new Error(error.response?.message || "Dữ liệu không hợp lệ");
+        throw new Error("Dữ liệu không hợp lệ");
       }
-      throw new Error(error.response?.message || error.message || "Đăng ký thất bại");
+      throw new Error(error.response?.message || "Đăng ký thất bại");
     }
   },
 

@@ -110,18 +110,69 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   uploadAvatar: async (file) => {
     const cur = get().user;
-    if (!cur) return;
+    if (!cur) {
+      throw new Error('Vui lòng đăng nhập để upload avatar');
+    }
+    
+    // Check if token exists
+    const token = localStorage.getItem('phimhub:token');
+    if (!token) {
+      // Clear user data if no token
+      localStorage.removeItem('phimhub:user');
+      set({ user: null });
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+    }
     
     try {
       // Call API to upload avatar
       const response = await authService.uploadAvatar(file);
       
+      // Check if response has user data
+      if (!response || !response.user) {
+        console.error('Upload avatar: Response missing user data', response);
+        throw new Error('Không nhận được dữ liệu người dùng từ server');
+      }
+      
       // Update local state with response
       const next = { ...cur, ...response.user };
       localStorage.setItem("phimhub:user", JSON.stringify(next));
       set({ user: next });
-    } catch (error) {
-      throw error;
+      
+      // Update token if provided in response (optional, keep existing token if not provided)
+      if (response.token && response.token.trim()) {
+        localStorage.setItem("phimhub:token", response.token);
+      }
+      
+      return response;
+    } catch (error: any) {
+      console.error('Upload avatar error:', error);
+      
+      // Only logout for clear authentication errors
+      // Check for explicit auth error messages or status codes
+      const isAuthError = (
+        error.status === 401 || 
+        error.status === 403 ||
+        (error.message && (
+          error.message.includes('Invalid token format') ||
+          error.message.includes('Token has expired') ||
+          error.message.includes('Invalid or expired token') ||
+          error.message.includes('Unauthorized') ||
+          error.message.includes('Access token required')
+        ))
+      );
+      
+      if (isAuthError) {
+        console.warn('Authentication error during avatar upload, logging out user');
+        // Clear invalid token only for real auth errors
+        localStorage.removeItem('phimhub:token');
+        localStorage.removeItem('phimhub:user');
+        set({ user: null });
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+      }
+      
+      // For other errors (network, server, file errors), don't logout
+      // Just show the error message
+      throw new Error(error.message || 'Có lỗi xảy ra khi upload avatar');
     }
   },
 

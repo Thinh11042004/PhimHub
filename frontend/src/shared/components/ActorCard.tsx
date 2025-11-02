@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { getImageUrl } from '../../utils/imageProxy';
 
 interface ActorCardProps {
   actor: {
@@ -46,7 +47,7 @@ export default function ActorCard({
       <div className={`${sizeClasses[size]} mx-auto rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-white/30 transition-all duration-300 group-hover:scale-105`}>
         {actor.photo_url ? (
           <img
-            src={actor.photo_url}
+            src={getImageUrl(actor.photo_url)}
             alt={actor.name}
             className="w-full h-full object-cover"
             onError={(e) => {

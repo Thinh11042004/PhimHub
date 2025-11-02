@@ -19,8 +19,9 @@ export default function AccountProfile() {
   // Initialize form with current user data
   useEffect(() => {
     if (user) {
-      console.log('User avatar:', user.avatar);
-      console.log('Avatar URL:', getAvatarUrl(user.avatar));
+      const avatarUrl = getAvatarUrl(user.avatar);
+      console.log('👤 User avatar path:', user.avatar);
+      console.log('🔗 Avatar URL:', avatarUrl);
       setEmail(user.email || "");
       setUsername(user.username || "");
       // Mặc định hiển thị tên đăng nhập, chỉ thay đổi nếu user đã có fullname
@@ -214,9 +215,13 @@ export default function AccountProfile() {
                         alt="Avatar" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
+                          console.error('❌ Failed to load avatar:', getAvatarUrl(user.avatar));
                           e.currentTarget.style.display = 'none';
                           const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                           if (fallback) fallback.style.display = 'flex';
+                        }}
+                        onLoad={() => {
+                          console.log('✅ Avatar loaded successfully:', getAvatarUrl(user.avatar));
                         }}
                       />
                     ) : null}
@@ -226,7 +231,7 @@ export default function AccountProfile() {
                       className="w-full h-full flex items-center justify-center text-white text-xl font-bold"
                       style={{ display: user?.avatar ? 'none' : 'flex' }}
                     >
-                      {user?.username?.charAt(0).toUpperCase() || 'U'}
+                      {(user?.fullname || user?.username || 'U').charAt(0).toUpperCase()}
                     </div>
                   </div>
                   

@@ -9,6 +9,7 @@ import { AddToListDialog } from "../../../shared/components/AddToListDialog";
 import LoginRequiredModal from "../../../shared/components/LoginRequiredModal";
 import { useLoginRequired } from "../../../shared/hooks/useLoginRequired";
 import { useNotification } from "../../../shared/hooks/useNotification";
+import { getImageUrl } from "../../../utils/imageProxy";
 
 /* =======================
    Types
@@ -93,8 +94,14 @@ function WideCard({ it, cta = "▶ Xem" }: { it: Item; cta?: string }) {
           const { InteractionsApi } = await import('../../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(it.id, it.isSeries ? 'series' : 'movie');
           setIsFavorited(response.isFavorited);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
           // Fallback to localStorage
           const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           const isInFavorites = favoritesData.some((item: any) => (item.id || item) === it.id);
@@ -121,8 +128,14 @@ function WideCard({ it, cta = "▶ Xem" }: { it: Item; cta?: string }) {
           const { InteractionsApi } = await import('../../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(it.id, it.isSeries ? 'series' : 'movie');
           setIsFavorited(response.isFavorited);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
           // Fallback to localStorage
           const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           const isInFavorites = favoritesData.some((item: any) => (item.id || item) === it.id);
@@ -253,7 +266,7 @@ function WideCard({ it, cta = "▶ Xem" }: { it: Item; cta?: string }) {
       >
         <div className="relative overflow-hidden rounded-xl">
           <img
-            src={it.img}
+            src={getImageUrl(it.img)}
             alt={it.title}
             loading="lazy"
             className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
@@ -307,7 +320,7 @@ function WideCard({ it, cta = "▶ Xem" }: { it: Item; cta?: string }) {
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-[9999] w-[420px] bg-gradient-to-br from-gray-900/98 to-gray-800/98 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden pointer-events-auto">
           <div className="relative">
             {/* Enhanced Background Image */}
-            <div className="h-64 bg-cover bg-center relative" style={{ backgroundImage: `url(${it.img})` }}>
+            <div className="h-64 bg-cover bg-center relative" style={{ backgroundImage: `url(${getImageUrl(it.img)})` }}>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
               
               {/* Quality badge */}
@@ -673,8 +686,11 @@ export default function Home() {
           const { favoritesApi } = await import('../../../services/favorites');
           const apiFavorites = await favoritesApi.getFavorites();
           setFavorites(new Set(apiFavorites.map((item: any) => item.id)));
-        } catch (error) {
-          console.error('Error loading favorites from API:', error);
+        } catch (error: any) {
+          // Only log non-auth errors (auth errors are already handled in favoritesApi)
+          if (error.response?.status !== 403 && error.response?.status !== 401) {
+            console.error('Error loading favorites from API:', error);
+          }
           // Fallback to localStorage
           const savedFavorites = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           setFavorites(new Set(savedFavorites.map((item: any) => item.id || item)));
@@ -714,8 +730,14 @@ export default function Home() {
         console.log('Home - Watch history loaded:', history);
         
         setUserWatchHistory(history);
-      } catch (error) {
-        console.error('Home - Failed to load watch history:', error);
+      } catch (error: any) {
+        // Silently handle network errors - don't log when backend is not running
+        const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                              error?.message?.includes('NetworkError') ||
+                              error?.code === 'ERR_NETWORK';
+        if (!isNetworkError) {
+          console.error('Home - Failed to load watch history:', error);
+        }
         setUserWatchHistory([]);
       } finally {
         setWatchHistoryLoading(false);
@@ -1112,7 +1134,7 @@ export default function Home() {
         >
         <div
           className="relative h-[75vh] min-h-[420px] w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${current.image})` }}
+          style={{ backgroundImage: `url(${getImageUrl(current.image)})` }}
         >
           {/* gradient overlays KHÔNG nhận pointer để không chặn click header */}
           <div className="pointer-events-none absolute inset-0">

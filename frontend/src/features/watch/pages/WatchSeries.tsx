@@ -39,6 +39,7 @@ export default function WatchSeries() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [theater, setTheater] = useState(false);
+  const [fitCover, setFitCover] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string | undefined>(undefined);
   const [currentTime, setCurrentTime] = useState(0);
   const [resumeAt, setResumeAt] = useState(0);
@@ -540,8 +541,14 @@ export default function WatchSeries() {
           const { InteractionsApi } = await import('../../../services/movies/interactions');
           const isFav = await InteractionsApi.checkFavorite(String(id), 'series');
           setIsFavorited(isFav);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
           // Fallback to localStorage
           const fav = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           setIsFavorited(fav.some((x: any) => (x.id || x) === id));
@@ -570,13 +577,16 @@ export default function WatchSeries() {
         const { InteractionsApi } = await import('../../../services/movies/interactions');
         if (isFavorited) {
           await InteractionsApi.removeFavorite(String(id), 'series');
+          success('Thành công', 'Đã xóa khỏi yêu thích');
         } else {
           await InteractionsApi.addFavorite(String(id), 'series');
+          success('Thành công', 'Đã thêm vào yêu thích');
         }
         setIsFavorited(!isFavorited);
         window.dispatchEvent(new CustomEvent('favoritesUpdated'));
       } catch (error) {
         console.error('Error updating favorites:', error);
+        showError('Lỗi', 'Không thể cập nhật yêu thích');
       }
     } else {
       // Fallback to localStorage for non-authenticated users
@@ -586,10 +596,12 @@ export default function WatchSeries() {
       if (exists) {
         next = fav.filter((x: any) => (x.id || x) !== id);
         setIsFavorited(false);
+        success('Thành công', 'Đã xóa khỏi yêu thích');
       } else {
         const item = { id, title: detail?.title || data.title, img: detail?.poster || detail?.banner || data.poster || data.banner, provider };
         next = [...fav, item];
         setIsFavorited(true);
+        success('Thành công', 'Đã thêm vào yêu thích');
       }
       localStorage.setItem('phimhub:favorites', JSON.stringify(next));
       window.dispatchEvent(new CustomEvent('favoritesUpdated'));
@@ -600,6 +612,11 @@ export default function WatchSeries() {
     const id = (detail?.id || (data.id as any)) as any;
     if (!id) return;
     
+    if (!user) {
+      showLoginRequiredModal({ title: "Yêu cầu đăng nhập", message: "Bạn cần đăng nhập để thêm vào danh sách" });
+      return;
+    }
+    
     // Set selected movie data and show dialog
     setSelectedMovie({
       id: String(id),
@@ -608,6 +625,20 @@ export default function WatchSeries() {
     });
     setShowAddToListDialog(true);
   };
+
+  // Listen for list add success
+  useEffect(() => {
+    const id = (detail?.id || (data.id as any)) as any;
+    if (!id) return;
+    
+    const handleListAddSuccess = (e: any) => {
+      if (e.detail?.movieId === String(id)) {
+        success('Thành công', `Đã thêm "${detail?.title || data.title}" vào danh sách`);
+      }
+    };
+    window.addEventListener('listAddSuccess', handleListAddSuccess);
+    return () => window.removeEventListener('listAddSuccess', handleListAddSuccess);
+  }, [detail?.id, detail?.title, data.id, data.title]);
 
   // Theater overlay side effects (lock scroll)
   useEffect(() => {
@@ -944,6 +975,8 @@ export default function WatchSeries() {
                   onProgress={handleProgress}
                   onPause={handlePause}
                   onEnded={handleEnded}
+                  theaterMode={theater}
+                  objectFitCover={fitCover}
                   data-video-player="true"
                 />
               );
@@ -954,11 +987,19 @@ export default function WatchSeries() {
           {!theater && (
           <div className={`mt-3 flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 ring-1 ring-white/10`}>
             <div className="flex flex-wrap items-center gap-5 text-sm text-white/80">
-              <button className={`inline-flex items-center gap-2 hover:text-white ${isFavorited ? 'text-rose-400' : ''}`} onClick={toggleFavorite}>
+              <button 
+                className={`inline-flex items-center gap-2 hover:text-white ${isFavorited ? 'text-rose-400' : ''}`} 
+                onClick={user ? toggleFavorite : () => showLoginRequiredModal({ title: "Yêu cầu đăng nhập", message: "Bạn cần đăng nhập để thêm vào yêu thích" })}
+                title={user ? (isFavorited ? "Bỏ yêu thích" : "Thêm vào yêu thích") : "Đăng nhập để yêu thích"}
+              >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.54 0 3.04.99 3.57 2.36h.86C11.46 4.99 12.96 4 14.5 4 17 4 19 6 19 8.5c0 3.78-3.4 6.86-8.55 11.54z"/></svg>
                 <span>Yêu thích</span>
               </button>
-              <button className="inline-flex items-center gap-2 hover:text-white text-cyan-400" onClick={handleAddToList}>
+              <button 
+                className="inline-flex items-center gap-2 hover:text-white text-cyan-400" 
+                onClick={user ? handleAddToList : () => showLoginRequiredModal({ title: "Yêu cầu đăng nhập", message: "Bạn cần đăng nhập để thêm vào danh sách" })}
+                title={user ? "Thêm vào danh sách" : "Đăng nhập để thêm vào danh sách"}
+              >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
                 <span>Thêm vào</span>
               </button>
@@ -976,16 +1017,30 @@ export default function WatchSeries() {
         </div>
       </section>
       {theater && (
-        <button
-          onClick={() => setTheater(false)}
-          className="fixed bottom-4 left-1/2 z-[1001] -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white ring-1 ring-white/20 backdrop-blur hover:bg-white/15"
-        >
-          Rạp phim <span className="ml-1 rounded-sm bg-yellow-400/20 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-300 ring-1 ring-yellow-400/40">ON</span>
-        </button>
+        <>
+        <div className="fixed top-2 left-1/2 z-[1001] -translate-x-1/2 flex items-center gap-2 rounded-full bg-black/40 px-2 py-1 ring-1 ring-white/20 backdrop-blur">
+          <button
+            onClick={() => setTheater(false)}
+            className="rounded-full bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/20"
+            title="Thoát rạp phim"
+          >
+            ⤺ Thoát
+          </button>
+          <button
+            onClick={() => setFitCover(v => !v)}
+            className="rounded-full bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/20"
+            title="Chuyển đổi khung hình"
+          >
+            Khung: {fitCover ? 'Crop' : 'Fit'}
+          </button>
+        </div>
+        </>
       )}
 
       {/* INFO + EPISODES */}
-      <section className="mx-auto w-full max-w-6xl px-3 md:px-4 py-6">
+      {!theater && (
+        <>
+          <section className="mx-auto w-full max-w-6xl px-3 md:px-4 py-6">
         <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 backdrop-blur-sm md:p-6">
           {/* Header row: poster + info side-by-side */}
           <div className="grid grid-cols-[100px,1fr] items-start gap-4 sm:grid-cols-[120px,1fr] md:grid-cols-[140px,1fr]">
@@ -1207,17 +1262,6 @@ export default function WatchSeries() {
         <div className="mt-4 rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-sm" id="comments-section">
           <div className="mb-6">
             <h3 className="text-2xl font-bold text-white mb-2">Bình luận ({comments.length})</h3>
-            
-            {/* Comment Tabs */}
-            <div className="flex gap-8 border-b border-white/20 mb-6">
-              <button className="relative pb-3 font-medium text-yellow-400">
-                Bình luận
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-400" />
-              </button>
-              <button className="relative pb-3 font-medium text-white/70 hover:text-white transition-colors">
-                Đánh giá
-              </button>
-            </div>
 
             {/* Comment Input */}
             <div className="mb-8">
@@ -1615,7 +1659,9 @@ export default function WatchSeries() {
               </div>
             </aside>
           </div>
-      </section>
+          </section>
+        </>
+      )}
       
       {/* Add to List Dialog */}
       {selectedMovie && (

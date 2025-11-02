@@ -74,6 +74,8 @@ export const AddToListDialog: React.FC<AddToListDialogProps> = ({
       
       // Show success message and close dialog after a short delay
       setSuccess(`Đã thêm "${movieTitle}" vào danh sách thành công`);
+      // Dispatch event for parent component to show notification
+      window.dispatchEvent(new CustomEvent('listAddSuccess', { detail: { movieId, movieTitle, listId } }));
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -97,6 +99,8 @@ export const AddToListDialog: React.FC<AddToListDialogProps> = ({
       
       setSuccess(`Đã xóa "${movieTitle}" khỏi danh sách`);
       setMovieInLists(prev => prev.filter(id => id !== listId));
+      // Dispatch event for parent component
+      window.dispatchEvent(new CustomEvent('listRemoveSuccess', { detail: { movieId, movieTitle, listId } }));
       
       // Refresh lists to update item count
       await loadLists();

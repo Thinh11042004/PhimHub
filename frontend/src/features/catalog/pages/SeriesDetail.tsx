@@ -22,6 +22,7 @@ import Avatar from "@shared/components/Avatar";
 import { useNotification } from "../../../shared/hooks/useNotification";
 import { NotificationContainer } from "../../../shared/components/NotificationContainer";
 import { useConfirm } from "../../../shared/components/ConfirmModalProvider";
+import { getBannerUrl, getImageUrl } from "../../../utils/imageProxy";
 
 type Episode = { ep: number; title: string; duration: number };
 type Season = { season: number; episodes: Episode[] };
@@ -194,8 +195,14 @@ export default function SeriesDetail() {
           const { InteractionsApi } = await import('../../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(slug, 'series');
           setIsFavorited(response.isFavorited);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
           // Fallback to localStorage
           const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           const isInFavorites = favoritesData.some((item: any) => (item.id || item) === slug);
@@ -494,7 +501,7 @@ export default function SeriesDetail() {
       <section className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden -mt-16">
         <div
           className="h-[66vh] w-full bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${detail.banner || (detail as any).img})` }}
+          style={{ backgroundImage: `url(${getBannerUrl(detail.banner || (detail as any).img)})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f2233] via-transparent to-transparent" />
         </div>
@@ -507,7 +514,7 @@ export default function SeriesDetail() {
           <div 
             className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-30"
             style={{
-              backgroundImage: `url(${detail.banner || (detail as any).img})`,
+              backgroundImage: `url(${getBannerUrl(detail.banner || (detail as any).img)})`,
               filter: 'blur(20px)',
               transform: 'scale(1.1)'
             }}
@@ -817,7 +824,7 @@ export default function SeriesDetail() {
                             <div 
                               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
                               style={{
-                                backgroundImage: `url(${version.thumbnail})`,
+                                backgroundImage: `url(${getImageUrl(version.thumbnail)})`,
                                 filter: 'blur(12px) brightness(0.4)',
                                 transform: 'scale(1.1)'
                               }}
@@ -1003,7 +1010,12 @@ export default function SeriesDetail() {
                             className="overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/10 hover:ring-white/20 hover:scale-105 transition-all duration-200"
                           >
                             {r.poster || r.banner ? (
-                              <img src={r.poster || r.banner} alt={r.title} className="aspect-[2/3] w-full object-cover" />
+                              <img src={getImageUrl(r.poster || r.banner)} alt={r.title} className="aspect-[2/3] w-full object-cover" onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (!target.src.includes('placeholder') && !target.src.includes('default-poster')) {
+                                  target.src = '/src/assets/default-poster.jpg';
+                                }
+                              }} />
                             ) : (
                               <div className="aspect-[2/3] w-full bg-white/10" />
                             )}
@@ -1028,17 +1040,6 @@ export default function SeriesDetail() {
           <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-sm">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Bình luận ({comments.length})</h2>
-              
-              {/* Comment Tabs */}
-              <div className="flex gap-8 border-b border-white/20 mb-6">
-                <button className="relative pb-3 font-medium text-yellow-400">
-                  Bình luận
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-400" />
-                </button>
-                <button className="relative pb-3 font-medium text-white/70 hover:text-white transition-colors">
-                  Đánh giá
-                </button>
-              </div>
 
               {/* Comment Input */}
               <div className="mb-8">

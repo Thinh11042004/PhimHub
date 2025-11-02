@@ -46,7 +46,7 @@ export default function AccountLayout() {
                 className="w-full h-full flex items-center justify-center text-white text-xl font-bold"
                 style={{ display: user?.avatar ? 'none' : 'flex' }}
               >
-                {user?.username?.charAt(0).toUpperCase() || 'U'}
+                {(user?.fullname || user?.username || 'U').charAt(0).toUpperCase()}
               </div>
             </div>
             

@@ -68,6 +68,12 @@ function FavCard({
         <PosterCard 
           movie={item.type === "movie" ? movieData : undefined}
           series={item.type === "series" ? movieData : undefined}
+          size="medium"
+          showOverlay={true}
+          showGenres={true}
+          showRating={true}
+          showAge={true}
+          showDuration={true}
         />
       </div>
     </ErrorBoundary>

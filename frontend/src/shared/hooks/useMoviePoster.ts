@@ -41,9 +41,15 @@ export function useMoviePoster(movieTitle: string) {
             title: 'PhimHub'
           });
         }
-      } catch (err) {
-        console.error('Error fetching movie poster:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+      } catch (err: any) {
+        // Silently handle network errors (backend not running, connection refused, etc.)
+        const isNetworkError = err?.message?.includes('Failed to fetch') || 
+                              err?.message?.includes('NetworkError') ||
+                              err?.code === 'ERR_NETWORK';
+        if (!isNetworkError) {
+          console.error('Error fetching movie poster:', err);
+        }
+        setError(null); // Don't set error state for network errors
         // Fallback to default poster
         setPoster({
           poster_url: 'https://images.unsplash.com/photo-1489599804151-0b6a0b0b0b0b?q=80&w=1000&auto=format&fit=crop',

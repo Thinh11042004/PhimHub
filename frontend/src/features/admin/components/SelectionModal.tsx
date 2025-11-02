@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Modal from '../../../shared/components/Modal';
 import { usePeopleSearchInfinite } from '../../../hooks/usePeopleSearchInfinite';
+import { getImageUrl } from '../../../utils/imageProxy';
 
 interface Person {
   id: number;
@@ -137,7 +138,7 @@ export const SelectionModal: React.FC<SelectionModalProps> = ({
                   >
                     {/* Avatar */}
                     <img 
-                      src={person.avatar || person.photo_url || '/img/person-placeholder.png'} 
+                      src={getImageUrl(person.avatar || person.photo_url || '/img/person-placeholder.png')} 
                       onError={(e) => {
                         e.currentTarget.src = '/img/person-placeholder.png';
                       }}

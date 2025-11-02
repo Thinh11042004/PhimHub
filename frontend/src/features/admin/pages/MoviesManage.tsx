@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { call } from "../../../shared/lib/api";
 import Modal from "../../../shared/components/Modal";
+import { getImageUrl } from "../../../utils/imageProxy";
 
 type Movie = {
   id: number;
@@ -83,17 +84,58 @@ export default function MoviesManage() {
     if (!editingMovie) return;
     
     try {
-      await call(`/movies/${editingMovie.id}`, {
+      const updatePayload: any = {};
+      
+      // Title là bắt buộc - luôn gửi
+      if (editForm.title && editForm.title.trim()) {
+        updatePayload.title = editForm.title.trim();
+      } else {
+        // Nếu title rỗng, giữ nguyên title hiện tại (không gửi field này)
+        console.warn('Title is empty, keeping original title');
+      }
+      
+      if (editForm.release_year && editForm.release_year.trim()) {
+        const year = parseInt(editForm.release_year);
+        if (!isNaN(year) && year > 1900 && year <= new Date().getFullYear() + 1) {
+          updatePayload.release_year = year;
+        }
+      }
+      
+      if (editForm.duration && editForm.duration.trim()) {
+        const duration = parseInt(editForm.duration);
+        if (!isNaN(duration) && duration > 0) {
+          updatePayload.duration = duration;
+        }
+      }
+      
+      if (editForm.country && editForm.country.trim()) {
+        updatePayload.country = editForm.country.trim();
+      }
+      
+      if (editForm.status) {
+        updatePayload.status = editForm.status;
+      }
+
+      // Đảm bảo có ít nhất một field để update
+      if (Object.keys(updatePayload).length === 0) {
+        alert('Không có thay đổi nào để lưu');
+        return;
+      }
+
+      console.log('Updating movie:', editingMovie.id, 'with payload:', updatePayload);
+
+      const response = await call(`/movies/${editingMovie.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: editForm.title,
-          release_year: editForm.release_year ? parseInt(editForm.release_year) : null,
-          duration: editForm.duration ? parseInt(editForm.duration) : null,
-          country: editForm.country || null,
-          status: editForm.status
-        })
+        body: JSON.stringify(updatePayload)
       });
+      
+      console.log('Update response:', response);
+      
+      // Kiểm tra response
+      if (!response || (response as any).success === false) {
+        const errorMessage = (response as any)?.message || 'Không thể cập nhật phim';
+        throw new Error(errorMessage);
+      }
       
       // Refresh movies list
       const params = new URLSearchParams();
@@ -119,9 +161,28 @@ export default function MoviesManage() {
       setMovies(list);
       
       setEditingMovie(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating movie:', error);
-      alert('Có lỗi xảy ra khi cập nhật phim');
+      
+      // Hiển thị thông báo lỗi chi tiết hơn
+      let errorMessage = 'Có lỗi xảy ra khi cập nhật phim';
+      
+      if (error.message) {
+        try {
+          // Thử parse JSON nếu error.message là JSON string
+          const parsed = JSON.parse(error.message);
+          if (parsed.message) {
+            errorMessage = parsed.message;
+          }
+        } catch {
+          // Nếu không phải JSON, dùng message trực tiếp
+          errorMessage = error.message;
+        }
+      } else if (error.response?.message) {
+        errorMessage = error.response.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -166,9 +227,9 @@ export default function MoviesManage() {
       </div>
 
       <div className="rounded-3xl border border-white/10 bg-white/5">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
           <table className="w-full">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white/5 backdrop-blur-sm">
               <tr className="border-b border-white/10">
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Phim</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Năm</th>
@@ -201,7 +262,10 @@ export default function MoviesManage() {
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-8 flex-shrink-0 rounded bg-white/10 flex items-center justify-center">
                           {movie.poster_url ? (
-                            <img src={movie.poster_url} alt={movie.title} className="h-full w-full rounded object-cover" />
+                            <img src={getImageUrl(movie.poster_url)} alt={movie.title} className="h-full w-full rounded object-cover" onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/src/assets/default-poster.jpg';
+                            }} />
                           ) : (
                             <div className="text-white/40 text-xs">📽️</div>
                           )}
@@ -283,7 +347,7 @@ export default function MoviesManage() {
 
       {/* Edit Modal */}
       {editingMovie && (
-        <Modal title="Chỉnh sửa phim" open={!!editingMovie} onClose={() => setEditingMovie(null)}>
+        <Modal title="Chỉnh sửa phim" open={!!editingMovie} onClose={() => setEditingMovie(null)} maxWidthClass="max-w-2xl">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-white mb-2">Tên phim</label>

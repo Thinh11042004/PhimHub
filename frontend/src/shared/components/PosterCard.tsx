@@ -93,8 +93,14 @@ export default function PosterCard({
           const { InteractionsApi } = await import('../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(item.id, isSeries ? 'series' : 'movie');
           setIsFavorited(response.isFavorited);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
           // Fallback to localStorage
           const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           const isInFavorites = favoritesData.some((fav: any) => (fav.id || fav) === item.id);
@@ -121,8 +127,14 @@ export default function PosterCard({
           const { InteractionsApi } = await import('../../services/movies/interactions');
           const response = await InteractionsApi.checkFavorite(item.id, isSeries ? 'series' : 'movie');
           setIsFavorited(response.isFavorited);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
           // Fallback to localStorage
           const favoritesData = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
           const isInFavorites = favoritesData.some((fav: any) => (fav.id || fav) === item.id);
@@ -284,6 +296,13 @@ export default function PosterCard({
           alt={item.title}
           loading="lazy"
           className="aspect-[2/3] w-full object-cover"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            if (!target.src.includes('placeholder') && !target.src.includes('default-poster')) {
+              target.src = '/src/assets/default-poster.jpg';
+            }
+          }}
         />
         
         {/* Rating badge */}
@@ -360,7 +379,7 @@ export default function PosterCard({
         >
           <div className="relative">
             {/* Background Image with Gradient Overlay */}
-            <div className="h-56 bg-cover bg-center relative" style={{ backgroundImage: `url(${item.poster})` }}>
+            <div className="h-56 bg-cover bg-center relative" style={{ backgroundImage: `url(${getImageUrl(item.poster)})` }}>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
               
               {/* Quality Badge */}

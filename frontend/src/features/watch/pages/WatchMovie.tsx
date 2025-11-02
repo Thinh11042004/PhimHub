@@ -383,6 +383,7 @@ export default function WatchMovie() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [theater, setTheater] = useState(false);
+  const [fitCover, setFitCover] = useState(false);
   
   // Comment states
   const [comments, setComments] = useState<any[]>([]);
@@ -435,8 +436,14 @@ export default function WatchMovie() {
         try {
           const isFav = await InteractionsApi.checkFavorite(String(movie.id), movie.isSeries ? 'series' : 'movie');
           setIsFavorited(isFav);
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
+        } catch (error: any) {
+          // Silently handle network errors - don't log when backend is not running
+          const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                                error?.message?.includes('NetworkError') ||
+                                error?.code === 'ERR_NETWORK';
+          if (!isNetworkError) {
+            console.error('Error checking favorite status:', error);
+          }
         }
       } else {
         // Fallback to localStorage for non-logged in users
@@ -454,14 +461,26 @@ export default function WatchMovie() {
     checkStatus();
   }, [movie?.id, user]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!movie) return;
     const token = localStorage.getItem('phimhub:token');
     const movieId = movie.id; // Use string ID directly
     if (token) {
       const curr = isFavorited;
       setIsFavorited(!curr);
-      (curr ? InteractionsApi.removeFavorite(movieId, 'movie') : InteractionsApi.addFavorite(movieId, 'movie')).catch(() => setIsFavorited(curr));
+      try {
+        if (curr) {
+          await InteractionsApi.removeFavorite(movieId, 'movie');
+          success('Thành công', 'Đã xóa khỏi yêu thích');
+        } else {
+          await InteractionsApi.addFavorite(movieId, 'movie');
+          success('Thành công', 'Đã thêm vào yêu thích');
+        }
+        window.dispatchEvent(new CustomEvent('favoritesUpdated'));
+      } catch (error) {
+        setIsFavorited(curr); // Revert on error
+        showError('Lỗi', 'Không thể cập nhật yêu thích');
+      }
     } else {
       const fav = JSON.parse(localStorage.getItem('phimhub:favorites') || '[]');
       const exists = fav.some((x: any) => (x.id || x) === movieId);
@@ -469,10 +488,12 @@ export default function WatchMovie() {
       if (exists) {
         next = fav.filter((x: any) => (x.id || x) !== movieId);
         setIsFavorited(false);
+        success('Thành công', 'Đã xóa khỏi yêu thích');
       } else {
         const item = { id: movieId, title: movie.title, img: movie.poster || movie.banner, provider };
         next = [...fav, item];
         setIsFavorited(true);
+        success('Thành công', 'Đã thêm vào yêu thích');
       }
       localStorage.setItem('phimhub:favorites', JSON.stringify(next));
       window.dispatchEvent(new CustomEvent('favoritesUpdated'));
@@ -482,6 +503,11 @@ export default function WatchMovie() {
   const handleAddToList = () => {
     if (!movie) return;
     
+    if (!user) {
+      showLoginRequiredModal({ title: "Yêu cầu đăng nhập", message: "Bạn cần đăng nhập để thêm vào danh sách" });
+      return;
+    }
+    
     // Set selected movie data and show dialog
     setSelectedMovie({
       id: String(movie.id),
@@ -490,6 +516,17 @@ export default function WatchMovie() {
     });
     setShowAddToListDialog(true);
   };
+
+  // Listen for list add success
+  useEffect(() => {
+    const handleListAddSuccess = (e: any) => {
+      if (e.detail?.movieId === String(movie?.id)) {
+        success('Thành công', `Đã thêm "${movie?.title}" vào danh sách`);
+      }
+    };
+    window.addEventListener('listAddSuccess', handleListAddSuccess);
+    return () => window.removeEventListener('listAddSuccess', handleListAddSuccess);
+  }, [movie?.id, movie?.title]);
 
   // Theater overlay side effects (lock scroll)
   useEffect(() => {
@@ -539,6 +576,8 @@ export default function WatchMovie() {
                   onProgress={handleProgress}
                   onPause={handlePause}
                   onEnded={handleEnded}
+                  theaterMode={theater}
+                  objectFitCover={fitCover}
                 />
               );
             })()}
@@ -582,17 +621,30 @@ export default function WatchMovie() {
         </div>
       </section>
       {theater && (
-        <button
-          onClick={() => setTheater(false)}
-          className="fixed bottom-4 left-1/2 z-[1001] -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white ring-1 ring-white/20 backdrop-blur hover:bg-white/15"
-        >
-          Rạp phim <span className="ml-1 rounded-sm bg-yellow-400/20 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-300 ring-1 ring-yellow-400/40">ON</span>
-        </button>
+        <>
+        <div className="fixed top-2 left-1/2 z-[1001] -translate-x-1/2 flex items-center gap-2 rounded-full bg-black/40 px-2 py-1 ring-1 ring-white/20 backdrop-blur">
+          <button
+            onClick={() => setTheater(false)}
+            className="rounded-full bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/20"
+            title="Thoát rạp phim"
+          >
+            ⤺ Thoát
+          </button>
+          <button
+            onClick={() => setFitCover(v => !v)}
+            className="rounded-full bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/20"
+            title="Chuyển đổi khung hình"
+          >
+            Khung: {fitCover ? 'Crop' : 'Fit'}
+          </button>
+        </div>
+        </>
       )}
       {/* When theater on, hide rest of page by fixing section; nothing else renders visually */}
-
-      {/* Thông tin + hành động */}
-      <section className="mx-auto w-full max-w-6xl px-3 md:px-4 py-6">
+      {!theater && (
+        <>
+          {/* Thông tin + hành động */}
+          <section className="mx-auto w-full max-w-6xl px-3 md:px-4 py-6">
         <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 backdrop-blur-sm md:p-6">
           {/* Header row: poster + info side-by-side */}
           <div className="grid grid-cols-[100px,1fr] items-start gap-4 sm:grid-cols-[120px,1fr] md:grid-cols-[140px,1fr]">
@@ -723,17 +775,6 @@ export default function WatchMovie() {
               <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10" id="comments-section">
                 <div className="mb-6">
                   <h3 className="text-2xl font-bold text-white mb-2">Bình luận ({comments.length})</h3>
-                  
-                  {/* Comment Tabs */}
-                  <div className="flex gap-8 border-b border-white/20 mb-6">
-                    <button className="relative pb-3 font-medium text-yellow-400">
-                      Bình luận
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-400" />
-                    </button>
-                    <button className="relative pb-3 font-medium text-white/70 hover:text-white transition-colors">
-                      Đánh giá
-                    </button>
-                  </div>
 
                   {/* Comment Input */}
                   <div className="mb-8">
@@ -1130,9 +1171,11 @@ export default function WatchMovie() {
             </aside>
           </div>
         </div>
-        </section>
+          </section>
+        </>
+      )}
         
-        {/* Add to List Dialog */}
+      {/* Add to List Dialog */}
         {selectedMovie && (
           <AddToListDialog
             isOpen={showAddToListDialog}

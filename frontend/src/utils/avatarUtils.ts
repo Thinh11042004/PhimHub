@@ -1,4 +1,12 @@
 // Utility functions for handling avatar URLs
+import { getImageUrl } from './imageProxy';
+
+// Get backend base URL (without /api)
+const getBackendBaseUrl = (): string => {
+  const apiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+  // Remove /api suffix if present
+  return apiBase.replace(/\/api$/, '');
+};
 
 /**
  * Get the full avatar URL from avatar path
@@ -10,13 +18,14 @@ export const getAvatarUrl = (avatarPath?: string): string => {
     return '';
   }
   
-  // If it's already a full URL (starts with http), return as is
-  if (avatarPath.startsWith('http')) {
-    return avatarPath;
+  // If it's a local upload path (starts with /uploads/), convert to full backend URL
+  if (avatarPath.startsWith('/uploads/')) {
+    const backendBase = getBackendBaseUrl();
+    return `${backendBase}${avatarPath}`;
   }
   
-  // If it's a relative path, prepend the backend URL
-  return `http://localhost:3001${avatarPath}`;
+  // Use getImageUrl to proxy external images (fixes SSL issues)
+  return getImageUrl(avatarPath);
 };
 
 /**

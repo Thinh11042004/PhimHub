@@ -67,9 +67,17 @@ class WatchHistoryService {
       } else {
         throw new Error(data.message || 'Failed to fetch watch history');
       }
-    } catch (error) {
-      console.error('🎬 WatchHistoryService - Error fetching watch history:', error);
-      throw error;
+    } catch (error: any) {
+      // Silently handle network errors (backend not running, connection refused, etc.)
+      const isNetworkError = error?.message?.includes('Failed to fetch') || 
+                            error?.message?.includes('NetworkError') ||
+                            error?.code === 'ERR_NETWORK' ||
+                            error?.name === 'TypeError';
+      if (!isNetworkError) {
+        console.error('🎬 WatchHistoryService - Error fetching watch history:', error);
+      }
+      // Return empty array instead of throwing when backend is not available
+      return [];
     }
   }
 

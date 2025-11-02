@@ -5,6 +5,7 @@ import { useAuth } from "../../store/auth";
 import ForgotPasswordModal from "../../features/auth/components/ForgotPasswordModal";
 import { authService } from "../../features/auth/services";
 import { useMoviePoster } from "../hooks/useMoviePoster";
+import { getImageUrl } from "../../utils/imageProxy";
 
 function Field({
   type = "text",
@@ -86,6 +87,18 @@ function LoginForm({ onForgotPasswordToggle }: { onForgotPasswordToggle: (show: 
     console.log("Login form submitted", { email, password });
     setError("");
     setSuccessMessage(""); // Clear success message when trying to login
+    
+    // Validation - kiểm tra các trường bắt buộc
+    if (!email || !email.trim()) {
+      setError("Vui lòng nhập email hoặc tên người dùng");
+      return;
+    }
+
+    if (!password || !password.trim()) {
+      setError("Vui lòng nhập mật khẩu");
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -104,6 +117,13 @@ function LoginForm({ onForgotPasswordToggle }: { onForgotPasswordToggle: (show: 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotPasswordError("");
+    
+    // Validation - kiểm tra email có được điền
+    if (!userEmail || !userEmail.trim()) {
+      setForgotPasswordError("Vui lòng nhập địa chỉ email");
+      return;
+    }
+    
     setForgotPasswordLoading(true);
 
     try {
@@ -414,6 +434,57 @@ function RegisterForm() {
       return;
     }
 
+    // Email validation - Quy tắc đơn giản
+    // 1. Có ký tự trước @
+    // 2. Có tên miền sau @
+    // 3. Có ít nhất một dấu chấm ở phần tên miền cuối cùng (TLD ≥ 2 ký tự)
+    const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    
+    // Kiểm tra pattern cơ bản
+    if (!emailPattern.test(email)) {
+      setError("Email không đúng định dạng. Ví dụ: name@example.com");
+      setLoading(false);
+      return;
+    }
+
+    // Kiểm tra không có nhiều dấu chấm liên tiếp (như ........)
+    if (/\.{2,}/.test(email)) {
+      setError("Email không được chứa nhiều dấu chấm liên tiếp");
+      setLoading(false);
+      return;
+    }
+
+    // Kiểm tra có ký tự trước @ (local part không rỗng)
+    const localPart = email.split('@')[0];
+    if (!localPart || localPart.trim().length === 0) {
+      setError("Email phải có ký tự trước @");
+      setLoading(false);
+      return;
+    }
+
+    // Kiểm tra có tên miền sau @
+    const domainPart = email.split('@')[1];
+    if (!domainPart || domainPart.trim().length === 0) {
+      setError("Email phải có tên miền sau @");
+      setLoading(false);
+      return;
+    }
+
+    // Kiểm tra có ít nhất một dấu chấm trong domain và TLD ≥ 2 ký tự
+    const lastDotIndex = domainPart.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      setError("Email phải có phần mở rộng tên miền (ví dụ: .com, .vn)");
+      setLoading(false);
+      return;
+    }
+    
+    const tld = domainPart.substring(lastDotIndex + 1);
+    if (tld.length < 2) {
+      setError("Phần mở rộng tên miền phải có ít nhất 2 ký tự (ví dụ: .com, .vn)");
+      setLoading(false);
+      return;
+    }
+
     try {
       // Call real API
       const response = await authService.register({ email, username, password });
@@ -574,7 +645,7 @@ export default function AuthModal() {
           ) : (
             <>
               <img
-                src={poster?.banner_url || poster?.poster_url || "https://images.unsplash.com/photo-1489599804151-0b6a0b0b0b0b?q=80&w=1000&auto=format&fit=crop"}
+                src={getImageUrl(poster?.banner_url || poster?.poster_url) || "https://images.unsplash.com/photo-1489599804151-0b6a0b0b0b0b?q=80&w=1000&auto=format&fit=crop"}
                 alt={poster?.title || "PhimHub"}
                 className="h-full w-full object-cover"
                 onError={(e) => {

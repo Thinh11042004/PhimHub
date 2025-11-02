@@ -6,6 +6,7 @@ import { watchHistoryService, WatchHistoryItem } from '../../../services/watchHi
 import { customListsService, CustomList } from '../../../services/customLists';
 import ErrorBoundary from '../../../shared/components/ErrorBoundary';
 import PosterCard from '../../../shared/components/PosterCard';
+import { getImageUrl } from '../../../utils/imageProxy';
 
 // Types
 type ListType = 'favorites' | 'history' | 'custom';
@@ -647,7 +648,7 @@ export default function MyLists() {
                             <>
                               <div className="w-20 h-28 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
                                 <img
-                                  src={common.poster_url || common.poster || ''}
+                                  src={getImageUrl(common.poster_url || common.poster || '')}
                                   alt={common.title}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {

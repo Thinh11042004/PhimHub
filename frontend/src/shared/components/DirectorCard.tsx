@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getImageUrl } from '../../utils/imageProxy';
 // import defaultDirectorAvatar from '../../assets/default-director-avatar.png'; // You'll need to add this image
 
 interface DirectorCardProps {
@@ -11,7 +12,7 @@ interface DirectorCardProps {
 }
 
 export default function DirectorCard({ director, size = 'medium' }: DirectorCardProps) {
-  const avatarSrc = director.photo_url || 'https://via.placeholder.com/300x300?text=Director';
+  const avatarSrc = director.photo_url ? getImageUrl(director.photo_url) : 'https://via.placeholder.com/300x300?text=Director';
   const cardClasses = {
     small: 'w-24',
     medium: 'w-32',

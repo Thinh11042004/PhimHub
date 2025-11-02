@@ -1,9 +1,13 @@
 // src/app/layouts/AdminLayout.tsx
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import GuideModal from "../../features/admin/components/GuideModal";
+import ReportModal from "../../features/admin/components/ReportModal";
 
 export default function AdminLayout() {
   const { pathname } = useLocation();
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const pageTitle = useMemo(() => {
     if (pathname.startsWith("/admin/genres")) return "Quản lý thể loại";
@@ -44,8 +48,8 @@ export default function AdminLayout() {
               <p className="text-xs text-white/60">{pathname}</p>
             </div>
             <div className="flex items-center gap-2">
-              <HeaderButton>Hướng dẫn</HeaderButton>
-              <HeaderButton primary>Báo cáo</HeaderButton>
+              <HeaderButton onClick={() => setGuideModalOpen(true)}>Hướng dẫn</HeaderButton>
+              <HeaderButton primary onClick={() => setReportModalOpen(true)}>Báo cáo</HeaderButton>
             </div>
           </div>
         </div>
@@ -55,6 +59,10 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </div>
+
+      {/* Modals */}
+      <GuideModal open={guideModalOpen} onClose={() => setGuideModalOpen(false)} />
+      <ReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
     </div>
   );
 }
@@ -86,9 +94,10 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function HeaderButton({ children, primary }: { children: React.ReactNode; primary?: boolean }) {
+function HeaderButton({ children, primary, onClick }: { children: React.ReactNode; primary?: boolean; onClick?: () => void }) {
   return (
     <button
+      onClick={onClick}
       className={
         primary
           ? "rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium text-white shadow-sm ring-1 ring-white/20 hover:bg-white/25"

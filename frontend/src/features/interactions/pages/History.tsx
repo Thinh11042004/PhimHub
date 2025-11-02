@@ -114,7 +114,7 @@ function HistoryCard({
   const detailHref = it.type === "movie" ? `/movies/${it.slug || it.id}` : `/series/${it.slug || it.id}`;
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/10 hover:ring-white/20">
+    <div className="group relative overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/10 hover:ring-white/20 w-[140px] md:w-[160px]">
       {/* remove */}
       <button
         onClick={onRemove}
@@ -456,7 +456,7 @@ export default function History() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {view.map((it) => (
               <HistoryCard
                 key={it.id}

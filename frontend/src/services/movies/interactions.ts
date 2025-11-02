@@ -10,12 +10,30 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 export const InteractionsApi = {
   // Favorites - Updated to use new API endpoints
   async listFavorites() {
-    const res = await fetch(`${API_BASE}/favorites`, {
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data.favorites || [];
+    try {
+      const res = await fetch(`${API_BASE}/favorites`, {
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        credentials: 'include'
+      });
+      
+      // Handle 403/401 gracefully (user not logged in or token expired)
+      if (!res.ok && (res.status === 403 || res.status === 401)) {
+        return [];
+      }
+      
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+      
+      const json = await res.json();
+      return json.data.favorites || [];
+    } catch (error) {
+      // Suppress console error for auth failures, log others
+      if (!error?.toString().includes('403') && !error?.toString().includes('401')) {
+        console.error('Error loading favorites:', error);
+      }
+      return [];
+    }
   },
 
   async addFavorite(movieId: string, movieType: 'movie' | 'series' = 'movie') {
@@ -38,12 +56,28 @@ export const InteractionsApi = {
   },
 
   async checkFavorite(movieId: string, movieType: 'movie' | 'series' = 'movie') {
-    const res = await fetch(`${API_BASE}/favorites/check/${movieId}/${movieType}`, {
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      credentials: 'include'
-    });
-    const json = await res.json();
-    return json.data;
+    try {
+      const res = await fetch(`${API_BASE}/favorites/check/${movieId}/${movieType}`, {
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        return { isFavorited: false } as any;
+      }
+      const json = await res.json();
+      return json.data;
+    } catch (error: any) {
+      // Silently handle network errors (backend not running, connection refused, etc.)
+      // Don't log these errors as they're expected when backend is down
+      if (error?.message?.includes('Failed to fetch') || 
+          error?.message?.includes('NetworkError') ||
+          error?.code === 'ERR_NETWORK' ||
+          error?.name === 'TypeError') {
+        return { isFavorited: false } as any;
+      }
+      // For other errors, still return false but don't throw
+      return { isFavorited: false } as any;
+    }
   },
 
   // Ratings
