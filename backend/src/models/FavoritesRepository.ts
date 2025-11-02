@@ -41,7 +41,10 @@ export class FavoritesRepository extends BaseRepository<Favorite> {
         m.thumbnail_url,
         m.poster_url,
         m.is_series,
-        m.slug
+        m.slug,
+        m.external_rating,
+        m.external_rating_count,
+        m.description as overview
       FROM favorites f
       INNER JOIN contents c ON f.content_id = c.id
       LEFT JOIN movies m ON c.movie_id = m.id
@@ -50,7 +53,32 @@ export class FavoritesRepository extends BaseRepository<Favorite> {
     `;
     
     const result = await this.executeQueryWithNamedParams(query, { userId });
-    return result.recordset;
+    
+    // Get genres for each movie
+    const favoritesWithGenres = await Promise.all(
+      result.recordset.map(async (favorite) => {
+        if (favorite.movie_id) {
+          const genresQuery = `
+            SELECT g.id, g.name
+            FROM genres g
+            INNER JOIN movie_genres mg ON g.id = mg.genre_id
+            WHERE mg.movie_id = @movieId
+          `;
+          const genresResult = await this.executeQueryWithNamedParams(genresQuery, { 
+            movieId: favorite.movie_id 
+          });
+          favorite.genres = genresResult.recordset.map((g: any) => ({
+            id: g.id,
+            name: g.name
+          }));
+        } else {
+          favorite.genres = [];
+        }
+        return favorite;
+      })
+    );
+    
+    return favoritesWithGenres;
   }
 
   // Check if a content is favorited by user

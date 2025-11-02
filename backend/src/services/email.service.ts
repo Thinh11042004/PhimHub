@@ -5,15 +5,58 @@ import { v4 as uuidv4 } from 'uuid';
 const resetTokens: Map<string, { email: string; expires: Date }> = new Map();
 
 export class EmailService {
-  private static transporter = nodemailer.createTransport({
-    // For development, use ethereal email (fake SMTP)
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-      user: 'ethereal.user@ethereal.email',
-      pass: 'ethereal.pass'
+  private static getTransporter() {
+    const host = process.env.EMAIL_HOST;
+    const port = parseInt(process.env.EMAIL_PORT || '587');
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+
+    if (!host || !user || !pass) {
+      return null;
     }
-  });
+
+    // For Gmail and most providers, use TLS on port 587, SSL on port 465
+    const isSecure = port === 465;
+
+    // Create transporter with proper configuration
+    const transporter = nodemailer.createTransport({
+      host: host,
+      port: port,
+      secure: isSecure, // true for 465, false for other ports (587 uses TLS)
+      auth: {
+        user: user.trim(), // Remove whitespace
+        pass: pass.trim()  // Remove whitespace
+      },
+      tls: {
+        // Do not fail on invalid certificates (useful for self-signed certs in dev)
+        rejectUnauthorized: process.env.NODE_ENV === 'production',
+        // Allow legacy TLS versions for compatibility
+        minVersion: 'TLSv1'
+      },
+      // Connection timeout
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 10000
+    });
+
+    return transporter;
+  }
+
+  // Verify SMTP connection
+  static async verifyConnection(): Promise<boolean> {
+    const transporter = this.getTransporter();
+    if (!transporter) {
+      return false;
+    }
+
+    try {
+      await transporter.verify();
+      return true;
+    } catch (error) {
+      console.error('❌ SMTP connection verification failed:', error);
+      return false;
+    }
+  }
 
   static async sendPasswordResetEmail(email: string): Promise<string> {
     // Generate reset token
@@ -27,8 +70,9 @@ export class EmailService {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     // Email content
+    const fromEmail = process.env.EMAIL_FROM || '"PhimHub" <noreply@phimhub.com>';
     const mailOptions = {
-      from: '"PhimHub" <noreply@phimhub.com>',
+      from: fromEmail,
       to: email,
       subject: 'Đặt lại mật khẩu - PhimHub',
       html: `
@@ -52,20 +96,83 @@ export class EmailService {
     };
 
     try {
-      // In development, just log the reset URL
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔗 Password Reset URL:', resetUrl);
-        console.log('📧 Reset email would be sent to:', email);
+      // Check if email is configured
+      const transporter = this.getTransporter();
+      
+      if (!transporter) {
+        // If no email config, log the reset URL for development
+        console.log('⚠️  Email not configured. Password reset URL:', resetUrl);
+        console.log('📧 Would send reset email to:', email);
+        console.log('💡 To enable email, set EMAIL_HOST, EMAIL_USER, and EMAIL_PASS in .env file');
         return resetToken;
       }
 
-      // In production, send actual email
-      await this.transporter.sendMail(mailOptions);
-      console.log('Password reset email sent to:', email);
+      // Log email configuration (without sensitive data)
+      const host = process.env.EMAIL_HOST;
+      const user = process.env.EMAIL_USER;
+      const port = process.env.EMAIL_PORT || '587';
+      console.log('📧 Attempting to send email via:', `${user}@${host}:${port}`);
+
+      // Verify connection before sending (optional check)
+      try {
+        await transporter.verify();
+        console.log('✅ SMTP server connection verified');
+      } catch (verifyError: any) {
+        console.warn('⚠️  SMTP verification failed, but attempting to send anyway:', verifyError.message);
+        console.warn('⚠️  Verification error code:', verifyError.code);
+        if (verifyError.response) {
+          console.warn('⚠️  SMTP response:', verifyError.response);
+        }
+      }
+
+      // Send actual email
+      const info = await transporter.sendMail(mailOptions);
+      
+      console.log('✅ Password reset email sent successfully!');
+      console.log('   📧 To:', email);
+      console.log('   🔗 Reset URL:', resetUrl);
+      if (info.messageId) {
+        console.log('   📬 Message ID:', info.messageId);
+      }
+      
       return resetToken;
-    } catch (error) {
-      console.error('Error sending password reset email:', error);
-      throw new Error('Không thể gửi email đặt lại mật khẩu');
+    } catch (error: any) {
+      console.error('❌ Error sending password reset email:', error);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error response code:', error.responseCode);
+      console.error('❌ Error command:', error.command);
+      console.error('❌ Full error:', JSON.stringify(error, null, 2));
+      
+      // Provide helpful error messages
+      let errorMessage = 'Không thể gửi email đặt lại mật khẩu';
+      
+      if (error.code === 'EAUTH') {
+        errorMessage = 'Lỗi xác thực email. Vui lòng kiểm tra EMAIL_USER và EMAIL_PASS trong file .env. Với Gmail, bạn cần sử dụng App Password thay vì mật khẩu thường.';
+      } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+        errorMessage = `Không thể kết nối đến máy chủ email tại ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT || '587'}. Vui lòng kiểm tra EMAIL_HOST và EMAIL_PORT`;
+      } else if (error.responseCode === 535 || error.responseCode === 534) {
+        errorMessage = 'Xác thực thất bại. Với Gmail, bạn cần sử dụng App Password (không phải mật khẩu tài khoản). Kiểm tra EMAIL_USER và EMAIL_PASS trong file .env';
+      } else if (error.command === 'AUTH PLAIN' || error.command === 'AUTH LOGIN') {
+        errorMessage = 'Lỗi xác thực email. Kiểm tra EMAIL_USER và EMAIL_PASS trong file .env. Với Gmail, dùng App Password.';
+      } else {
+        errorMessage = `Không thể gửi email: ${error.message || error.code || 'Unknown error'}`;
+      }
+      
+      // Log reset URL as fallback even if email fails (for development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔗 Fallback - Password Reset URL (in case email failed):', resetUrl);
+        console.log('📝 Error details for debugging:', {
+          code: error.code,
+          responseCode: error.responseCode,
+          command: error.command,
+          message: error.message,
+          host: process.env.EMAIL_HOST,
+          port: process.env.EMAIL_PORT || '587',
+          user: process.env.EMAIL_USER ? `${process.env.EMAIL_USER.substring(0, 3)}***` : 'not set'
+        });
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 

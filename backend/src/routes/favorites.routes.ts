@@ -4,14 +4,14 @@ import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
+// Public route: check favorite should work without auth and default to false
+router.get('/check/:movieId/:movieType', FavoritesController.checkFavorite);
+
 // Protected routes require authentication
 router.use(authenticateToken);
 
 // GET /api/favorites - Get user's favorites
 router.get('/', FavoritesController.getFavorites);
-
-// GET /api/favorites/check/:movieId/:movieType - Check if movie is favorited
-router.get('/check/:movieId/:movieType', FavoritesController.checkFavorite);
 
 // POST /api/favorites - Add movie to favorites
 router.post('/', FavoritesController.addToFavorites);

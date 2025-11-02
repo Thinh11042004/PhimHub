@@ -21,9 +21,16 @@ import { adminMovieGenresRouter } from './routes/admin.movie.genres';
 import { errorHandler } from './middlewares/error.middleware';
 import Database from './config/database';
 import Migrator from './db/migrator';
+import axios from 'axios';
+import https from 'https';
+import http from 'http';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from backend/.env
+// When running from src/: __dirname = .../backend/src, so ../.env is correct
+// When running from dist/: __dirname = .../backend/dist, so ../.env is correct
+const envPath = path.join(process.cwd(), '.env');
+dotenv.config({ path: envPath });
+console.log('📁 Loading .env from:', envPath);
 
 // Note: Removed process.env.TZ to avoid timezone conflicts with UTC handling
 // Backend now uses UTC consistently, frontend handles Vietnam timezone display
@@ -62,6 +69,116 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Simple media proxy to bypass CORS and cert issues (dev use)
+app.get('/api/proxy', async (req, res) => {
+  try {
+    const target = (req.query.url as string) || '';
+    if (!target || !/^https?:\/\//i.test(target)) {
+      console.error('❌ Proxy: Invalid URL:', target);
+      res.status(400).json({ error: 'invalid_url' });
+      return;
+    }
+
+    const targetOrigin = (() => {
+      try { return new URL(target).origin; } catch { return undefined; }
+    })();
+
+    // Allow cross-origin
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Range, Accept, Origin, Referer, User-Agent');
+    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+
+    // Set cache headers for images
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(target);
+    if (isImage) {
+      res.header('Cache-Control', 'public, max-age=86400'); // Cache images for 1 day
+    }
+
+    // Forward Range if present
+    const range = req.headers['range'] as string | undefined;
+
+    // Create HTTPS agent that doesn't reject unauthorized certificates
+    // This fixes SSL certificate issues (ERR_CERT_AUTHORITY_INVALID)
+    const agent = new https.Agent({ 
+      rejectUnauthorized: false // Allow self-signed or invalid SSL certificates
+    });
+
+    const acceptHeader = isImage 
+      ? 'image/*,*/*;q=0.8'
+      : 'application/vnd.apple.mpegurl,application/x-mpegURL,video/*;q=0.9,*/*;q=0.8';
+
+    console.log(`🔍 Proxy: Fetching ${isImage ? 'image' : 'media'} from:`, target);
+
+    const upstream = await axios.get(target, {
+      responseType: 'stream',
+      headers: {
+        ...(range ? { Range: range } : {}),
+        'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
+        Referer: targetOrigin || (req.headers['referer'] as string) || undefined,
+        Origin: targetOrigin || undefined,
+        Accept: acceptHeader,
+        Connection: 'keep-alive'
+      },
+      httpsAgent: agent,
+      httpAgent: new http.Agent({ keepAlive: true }),
+      timeout: 30000, // Increased timeout for images
+      maxRedirects: 5,
+      validateStatus: () => true // Accept all status codes, we'll handle them
+    });
+
+    // Check if upstream returned an error status
+    if (upstream.status >= 400) {
+      console.error(`❌ Proxy: Upstream returned ${upstream.status} for:`, target);
+      // Drain the error stream to prevent memory leaks
+      upstream.data.resume(); // Consume the stream without processing
+      upstream.data.on('error', () => {}); // Ignore drain errors
+      
+      if (!res.headersSent) {
+        res.status(502).json({ 
+          error: 'proxy_upstream_failed', 
+          message: `Upstream server returned ${upstream.status}`,
+          target: target
+        });
+      }
+      return;
+    }
+
+    // Mirror important headers
+    const passthroughHeaders = ['content-type', 'content-length', 'accept-ranges', 'content-range', 'cache-control'];
+    for (const h of passthroughHeaders) {
+      const v = upstream.headers[h];
+      if (v) res.setHeader(h, v as any);
+    }
+
+    // Status passthrough (e.g., 206 for ranged, 200 for success)
+    res.status(upstream.status);
+
+    // Handle stream errors gracefully
+    upstream.data.on('error', (err: any) => {
+      console.error('❌ Proxy stream error:', err.message);
+      try { 
+        if (!res.headersSent) {
+          res.status(502).json({ error: 'proxy_stream_failed', message: err.message });
+        }
+        res.destroy(); 
+      } catch {}
+    });
+
+    upstream.data.pipe(res);
+    console.log(`✅ Proxy: Successfully proxying ${upstream.status} response`);
+    return;
+  } catch (err: any) {
+    console.error('❌ Proxy error:', err.message);
+    console.error('❌ Proxy error stack:', err.stack);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'proxy_failed', message: err.message });
+    }
+    return;
+  }
+});
 
 // Serve static files (uploads) with CORS headers
 app.use('/uploads', (req, res, next) => {
@@ -239,6 +356,31 @@ async function startServer() {
     // Run migrations
     const migrator = new Migrator();
     await migrator.run();
+    
+    // Verify email configuration (optional, won't fail if not configured)
+    const EmailService = (await import('./services/email.service')).EmailService;
+    const emailConfigured = process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS;
+    if (emailConfigured) {
+      console.log('📧 Email service: Configured');
+      console.log(`   Host: ${process.env.EMAIL_HOST}`);
+      console.log(`   Port: ${process.env.EMAIL_PORT || '587'}`);
+      console.log(`   User: ${process.env.EMAIL_USER?.substring(0, 3)}***`);
+      try {
+        const emailVerified = await EmailService.verifyConnection();
+        if (emailVerified) {
+          console.log('✅ Email service: SMTP connection verified');
+        } else {
+          console.warn('⚠️  Email service: SMTP connection failed (emails may not work)');
+          console.warn('💡 Run "npm run test:email" to debug email configuration');
+        }
+      } catch (error: any) {
+        console.warn('⚠️  Email service: SMTP verification error:', error.message);
+        console.warn('💡 Run "npm run test:email" to debug email configuration');
+      }
+    } else {
+      console.log('⚠️  Email service: Not configured (password reset emails won\'t be sent)');
+      console.log('💡 Set EMAIL_HOST, EMAIL_USER, and EMAIL_PASS in .env file to enable');
+    }
     
     // Start server
     app.listen(PORT, () => {

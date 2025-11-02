@@ -139,9 +139,9 @@ export class FavoritesController {
     }
   });
 
-  // GET /api/favorites/check/:movieId/:movieType - Check if movie is favorited
+  // GET /api/favorites/check/:movieId/:movieType - Check if movie is favorited (public)
   static checkFavorite = asyncHandler(async (req: AuthenticatedRequest, res: Response<ApiResponse>) => {
-    const userId = req.user!.id; // Guaranteed to exist due to middleware
+    const userId = req.user?.id; // may be undefined for public access
 
     const { movieId, movieType } = req.params;
 
@@ -159,6 +159,15 @@ export class FavoritesController {
       });
     }
 
+    // If not authenticated, default to false
+    if (!userId) {
+      return res.json({
+        success: true,
+        message: 'Favorite status retrieved successfully (public)',
+        data: { isFavorited: false }
+      });
+    }
+
     try {
       const isFavorited = await new FavoritesService().isFavorited(
         userId, 
@@ -173,9 +182,11 @@ export class FavoritesController {
       });
     } catch (error: any) {
       console.error('Check favorite error:', error);
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to check favorite status'
+      // On error, default to false for resilience
+      return res.json({
+        success: true,
+        message: 'Favorite status defaulted due to error',
+        data: { isFavorited: false }
       });
     }
   });

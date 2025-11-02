@@ -230,29 +230,43 @@ export class AuthController {
   });
 
   static forgotPassword = asyncHandler(async (req: Request<{}, ApiResponse, ForgotPasswordRequest>, res: Response<ApiResponse>) => {
-    const validatedData = validateRequest(forgotPasswordSchema, req.body);
-    const { email } = validatedData;
-
-    // Check if user exists
-    const user = await UserService.findByEmail(email);
-    if (!user) {
-      // Don't reveal if email exists or not for security
-      return res.json({
-        success: true,
-        message: 'Nếu email tồn tại, chúng tôi đã gửi liên kết đặt lại mật khẩu'
-      });
-    }
-
     try {
+      const validatedData = validateRequest(forgotPasswordSchema, req.body);
+      const { email } = validatedData;
+
+      console.log('📧 Forgot password request for email:', email);
+
+      // Check if user exists
+      const user = await UserService.findByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        console.log('⚠️  User not found for email:', email);
+        return res.json({
+          success: true,
+          message: 'Nếu email tồn tại, chúng tôi đã gửi liên kết đặt lại mật khẩu'
+        });
+      }
+
+      console.log('✅ User found, sending password reset email...');
       await EmailService.sendPasswordResetEmail(email);
+      console.log('✅ Password reset email sent successfully');
+      
       return res.json({
         success: true,
         message: 'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn'
       });
     } catch (error: any) {
+      console.error('❌ Forgot password error:', error);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        responseCode: error.responseCode
+      });
+      
       return res.status(500).json({
         success: false,
-        message: 'Không thể gửi email đặt lại mật khẩu',
+        message: error.message || 'Không thể gửi email đặt lại mật khẩu',
         error: error.message
       });
     }

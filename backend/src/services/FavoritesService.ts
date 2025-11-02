@@ -18,12 +18,12 @@ export class FavoritesService {
         title: favorite.title || 'Unknown Title',
         year: favorite.release_year,
         poster: favorite.poster_url || favorite.thumbnail_url || '',
-        genres: [], // Will be populated from movie details if needed
+        genres: favorite.genres || [], // Now populated from database
         duration: favorite.duration,
-        rating: 0, // Default rating
+        rating: favorite.external_rating || 0, // Use external_rating from database
         age: favorite.age_rating,
         episodes: 0, // Will be populated from episodes table if needed
-        overview: '', // Will be populated from movie details if needed
+        overview: favorite.overview || '', // Now populated from database
         provider: 'local',
         favorited_at: favorite.added_at
       }));
